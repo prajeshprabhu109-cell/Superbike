@@ -1700,6 +1700,7 @@ function openAuctionDetail(i) {
   btn.textContent = state.money >= a.price ? 'BUY FRAME — ₹' + a.price.toLocaleString('en-IN') : 'INSUFFICIENT CAPITAL';
   openModal('modal-auction');
   obTrigger('auctionDetail');
+}
 
 function confirmBuy() {
   const a = state.auctions[currentAuctionIdx];
