@@ -1,0 +1,38 @@
+:root { --neon: #00ffff; --gold: #ffcc00; --bg-glass: rgba(0, 0, 0, 0.75); }
+body { margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; background: #000; color: #fff; }
+
+#ui-layer { position: absolute; inset: 0; display: flex; justify-content: space-between; padding: 40px; pointer-events: none; z-index: 10; }
+.side-panel { pointer-events: auto; display: flex; flex-direction: column; justify-content: center; }
+
+/* Tier Sidebar */
+.tier-list { display: flex; flex-direction: column; gap: 12px; }
+.tier {
+    width: 55px; height: 75px; background: var(--bg-glass); border-left: 4px solid #333;
+    display: flex; align-items: center; justify-content: center; font-family: 'Orbitron';
+    cursor: pointer; transition: 0.3s; backdrop-filter: blur(10px);
+}
+.tier.active { border-left-color: var(--neon); background: rgba(0, 255, 255, 0.15); color: var(--neon); }
+
+/* Right Info Card */
+.glass-card {
+    background: var(--bg-glass); padding: 30px; width: 380px; border-radius: 4px;
+    border-top: 4px solid var(--neon); backdrop-filter: blur(15px);
+}
+.brand { font-size: 12px; letter-spacing: 3px; color: var(--neon); font-weight: bold; }
+h2 { font-family: 'Orbitron'; margin: 5px 0 25px 0; font-size: 24px; }
+
+.rank-box { margin-bottom: 25px; }
+.rank-labels { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
+.gold-text { color: var(--gold); }
+.progress-bar { height: 6px; background: #222; margin-top: 8px; position: relative; }
+.fill { height: 100%; background: var(--neon); box-shadow: 0 0 15px var(--neon); }
+
+.spec-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #222; font-size: 13px; }
+.val { color: var(--gold); font-weight: bold; }
+
+.upgrade-btn {
+    width: 100%; padding: 18px; margin-top: 25px; background: var(--neon); color: #000;
+    border: none; font-weight: 900; font-family: 'Orbitron'; cursor: pointer;
+}
+.nav-btns { display: flex; gap: 10px; margin-top: 10px; }
+.nav-btns button { flex: 1; padding: 12px; background: #111; color: #fff; border: 1px solid #333; cursor: pointer; }

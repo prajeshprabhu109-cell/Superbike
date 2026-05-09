@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AEVITH MOTO | Superbike Tycoon</title>
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script>
+// ── CrazyGames SDK Init & Analytics ─────────────────────────
+// Signal loading has started as early as possible
+window.addEventListener('load', () => {
+  try {
+    if (window.CrazyGames && window.CrazyGames.SDK) {
+      window.CrazyGames.SDK.game.loadingStart();
+    }
+  } catch(e) { console.warn('[CG SDK] loadingStart failed:', e); }
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&family=Exo+2:ital,wght@0,100;0,400;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c0:#000508;--c1:#020d14;--c2:#061824;--c3:#0a2535;
+  --cyan:#00e5ff;--cyan2:#00b8d4;--cyan3:rgba(0,229,255,0.15);
+  --amber:#ffab00;--amber2:rgba(255,171,0,0.15);
+  --red:#ff1744;--green:#00e676;
+  --text:#cde8f0;--text2:#7aacbf;--text3:#3d6d82;
+  --hud:rgba(0,229,255,0.06);--hudb:rgba(0,229,255,0.18);
+  --ff-head:'Exo 2',sans-serif;--ff-ui:'Rajdhani',sans-serif;--ff-mono:'Share Tech Mono',monospace;
+  --r:6px;--r2:12px;
+  --beat-scale:1;
+  --beat-glow:rgba(0,229,255,0.18);
+}
+html,body{height:100%;overflow:hidden;background:var(--c0);color:var(--text);font-family:var(--ff-ui);font-size:16px}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,0.015) 2px,rgba(0,229,255,0.015) 4px);pointer-events:none;z-index:9999}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--c1)}
+::-webkit-scrollbar-thumb{background:var(--cyan3);border-radius:2px}
+
+/* ── LAYOUT ── */
+#app{display:grid;grid-template-columns:260px 1fr 240px;grid-template-rows:48px 1fr 140px;height:100dvh;gap:0}
+
+/* ── TOP HUD ── */
+#hud-top{grid-column:1/-1;display:flex;align-items:center;gap:.75rem;padding:0 1rem;background:rgba(0,5,8,0.97);border-bottom:1px solid var(--hudb);position:relative;z-index:100;transition:box-shadow .1s}
+#hud-top.beat-flash{box-shadow:0 2px 18px var(--beat-glow)}
+.hud-logo{font-family:var(--ff-head);font-weight:900;font-style:italic;font-size:1.1rem;color:var(--cyan);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;transition:text-shadow .1s}
+.hud-logo.beat-pulse{text-shadow:0 0 18px var(--cyan),0 0 36px var(--cyan2)}
+.hud-logo span{color:var(--amber)}
+.hud-sep{flex:1}
+.hud-stat{display:flex;flex-direction:column;align-items:center;min-width:72px}
+.hud-stat label{font-size:.5rem;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;font-family:var(--ff-mono)}
+.hud-stat .val{font-family:var(--ff-mono);font-size:.82rem;color:var(--cyan);line-height:1;transition:transform .08s}
+.hud-stat .val.gold{color:var(--amber)}
+.hud-stat .val.green{color:var(--green)}
+.hud-level-bar{width:70px;height:3px;background:var(--c3);border-radius:2px;margin-top:2px}
+.hud-level-fill{height:100%;background:linear-gradient(90deg,var(--cyan2),var(--cyan));border-radius:2px;transition:width .6s ease}
+.hud-btn{padding:.28rem .7rem;background:var(--hud);border:1px solid var(--hudb);border-radius:var(--r);font-family:var(--ff-ui);font-size:.65rem;font-weight:600;color:var(--cyan);cursor:pointer;text-transform:uppercase;letter-spacing:.06em;transition:all .15s;white-space:nowrap}
+.hud-btn:hover{background:var(--cyan3);border-color:var(--cyan)}
+.hud-btn.amber{color:var(--amber);border-color:rgba(255,171,0,.3)}
+.hud-btn.amber:hover{background:var(--amber2);border-color:var(--amber)}
+.hud-btn.phonk-active{background:rgba(255,171,0,.12);border-color:var(--amber);color:var(--amber);animation:phonk-btn-pulse 0.8s ease-in-out infinite alternate}
+@keyframes phonk-btn-pulse{from{box-shadow:none}to{box-shadow:0 0 10px rgba(255,171,0,.4)}}
+#save-flash{font-family:var(--ff-mono);font-size:.55rem;color:var(--green);opacity:0;transition:opacity .3s;letter-spacing:.1em}
+
+/* ── LEFT PANEL ── */
+#panel-left{background:var(--c1);border-right:1px solid var(--hudb);display:flex;flex-direction:column;overflow:hidden}
+.p-section{padding:.65rem .75rem;border-bottom:1px solid rgba(0,229,255,.07)}
+.p-section-title{font-size:.55rem;font-family:var(--ff-mono);color:var(--text3);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.45rem}
+
+#garage-slots{display:flex;flex-direction:column;gap:5px;max-height:195px;overflow-y:auto}
+.slot{display:flex;align-items:center;gap:.45rem;padding:.4rem .45rem;background:var(--hud);border:1px solid transparent;border-radius:var(--r);cursor:pointer;transition:all .15s}
+.slot:hover,.slot.active{border-color:var(--hudb);background:var(--cyan3)}
+.slot.active{border-color:var(--cyan)}
+.slot-icon{width:30px;height:21px;background:var(--c3);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+.slot-info{flex:1;min-width:0}
+.slot-name{font-size:.65rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.slot-sub{font-size:.54rem;color:var(--text3);font-family:var(--ff-mono)}
+.slot-cond{width:100%;height:3px;background:var(--c3);border-radius:2px;margin-top:3px}
+.slot-cond-fill{height:100%;border-radius:2px;transition:width .3s}
+
+#skill-tree{flex:1;overflow-y:auto;padding:.65rem .75rem}
+.skill-node{display:flex;align-items:center;gap:.45rem;padding:.38rem .45rem;border:1px solid rgba(0,229,255,.1);border-radius:var(--r);margin-bottom:5px;cursor:pointer;transition:all .2s;background:var(--hud)}
+.skill-node:hover{border-color:var(--hudb)}
+.skill-node.unlocked{border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.05)}
+.skill-node.locked{opacity:.4;cursor:not-allowed}
+.skill-icon{font-size:.95rem;width:22px;text-align:center}
+.skill-text{flex:1}
+.skill-name{font-size:.65rem;font-weight:600;color:var(--text)}
+.skill-desc{font-size:.54rem;color:var(--text3)}
+.skill-cost{font-size:.58rem;font-family:var(--ff-mono);color:var(--amber)}
+
+/* ── CENTER ── */
+#viewport-wrap{position:relative;overflow:hidden;background:var(--c0)}
+#viewport-wrap::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:40px 40px;z-index:1;pointer-events:none}
+#three-canvas{width:100%;height:100%;display:block}
+
+/* ── PHONK VISUALIZER BARS ── */
+#phonk-visualizer{position:absolute;bottom:0;left:0;right:0;height:36px;display:flex;align-items:flex-end;gap:2px;padding:0 6px;pointer-events:none;z-index:5;opacity:0;transition:opacity .4s}
+#phonk-visualizer.active{opacity:1}
+.viz-bar{flex:1;background:linear-gradient(to top,var(--cyan2),var(--cyan));border-radius:2px 2px 0 0;transition:height .08s;min-height:2px}
+
+#center-hud{position:absolute;inset:0;pointer-events:none;z-index:10}
+.hud-node{position:absolute;pointer-events:all;cursor:pointer}
+.hud-node-dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:pulse-dot 2s infinite}
+.hud-node-label{position:absolute;background:rgba(0,5,8,.92);border:1px solid var(--hudb);border-radius:var(--r);padding:.25rem .45rem;font-size:.56rem;font-family:var(--ff-mono);color:var(--cyan);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s;top:-28px;left:12px}
+.hud-node:hover .hud-node-label{opacity:1}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 4px var(--cyan)}50%{box-shadow:0 0 14px var(--cyan),0 0 28px var(--cyan2)}}
+
+#viewport-actions{position:absolute;bottom:0;left:0;right:0;display:flex;gap:.4rem;padding:.45rem .6rem;background:linear-gradient(transparent,rgba(0,5,8,.96));z-index:20;justify-content:center;flex-wrap:wrap}
+.action-node{padding:.3rem .7rem;border:1px solid var(--hudb);border-radius:var(--r);background:var(--hud);font-size:.6rem;font-weight:700;font-family:var(--ff-ui);color:var(--text);cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:.25rem}
+.action-node:hover{background:var(--cyan3);border-color:var(--cyan);color:var(--cyan)}
+.action-node.amber:hover{background:var(--amber2);border-color:var(--amber);color:var(--amber)}
+.action-node.green:hover{background:rgba(0,230,118,.08);border-color:var(--green);color:var(--green)}
+.action-node:active{transform:scale(.96)}
+
+.float-text{position:absolute;font-family:var(--ff-mono);font-weight:700;font-size:.78rem;pointer-events:none;z-index:200;animation:float-up 1.5s ease-out forwards;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+@keyframes float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+/* ── RIGHT PANEL ── */
+#panel-right{background:var(--c1);border-left:1px solid var(--hudb);display:flex;flex-direction:column;overflow:hidden}
+#auction-list{flex:1;overflow-y:auto;padding:.45rem}
+.auction-card{padding:.45rem;border:1px solid rgba(0,229,255,.1);border-radius:var(--r);margin-bottom:5px;cursor:pointer;transition:all .2s;background:var(--hud)}
+.auction-card:hover{border-color:var(--hudb);background:var(--cyan3)}
+.auction-card.mythic{border-color:rgba(255,171,0,.4);background:var(--amber2);animation:mythic-glow 2s infinite}
+@keyframes mythic-glow{0%,100%{box-shadow:none}50%{box-shadow:0 0 12px rgba(255,171,0,.3)}}
+.ac-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem}
+.ac-name{font-size:.68rem;font-weight:700;color:var(--text)}
+.ac-badge{font-size:.48rem;padding:1px 5px;border-radius:2px;font-family:var(--ff-mono);text-transform:uppercase}
+.ac-badge.mythic{background:rgba(255,171,0,.2);color:var(--amber)}
+.ac-badge.rare{background:rgba(0,229,255,.1);color:var(--cyan)}
+.ac-badge.common{background:rgba(61,109,130,.15);color:var(--text3)}
+.ac-price{font-size:.62rem;font-family:var(--ff-mono);color:var(--amber)}
+.ac-stats{display:flex;gap:.35rem;margin-top:.18rem}
+.ac-stat{font-size:.52rem;color:var(--text3);font-family:var(--ff-mono)}
+
+/* ── MODULE SLIDERS ── */
+.module-slider-wrap{padding:.45rem .75rem;border-bottom:1px solid rgba(0,229,255,.07)}
+.module-name{font-size:.57rem;font-family:var(--ff-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:.28rem;display:flex;justify-content:space-between}
+.module-name span{color:var(--cyan)}
+.slider-track{position:relative;height:18px;display:flex;align-items:center}
+input[type=range].hud-slider{width:100%;-webkit-appearance:none;appearance:none;height:3px;background:var(--c3);border-radius:2px;outline:none;cursor:pointer;position:relative;z-index:2}
+input[type=range].hud-slider::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--cyan);border:2px solid var(--c0);box-shadow:0 0 5px var(--cyan);transition:transform .1s}
+input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
+.slider-fill{position:absolute;left:0;height:3px;background:linear-gradient(90deg,var(--cyan2),var(--cyan));border-radius:2px;pointer-events:none;top:50%;transform:translateY(-50%);z-index:1}
+.cond-display{display:flex;align-items:center;gap:.35rem;margin:.4rem .75rem 0}
+.cond-bar{flex:1;height:5px;background:var(--c3);border-radius:2px;overflow:hidden}
+.cond-bar-fill{height:100%;border-radius:2px;transition:width .4s}
+.cond-pct{font-size:.62rem;font-family:var(--ff-mono);width:30px;text-align:right}
+
+/* ── BOTTOM BAR ── */
+#bottom-bar{grid-column:1/-1;background:rgba(0,5,8,.97);border-top:1px solid var(--hudb);display:grid;grid-template-columns:1fr 1fr 1fr}
+.bottom-pane{padding:.45rem .65rem;overflow:hidden}
+.bottom-pane+.bottom-pane{border-left:1px solid rgba(0,229,255,.07)}
+.bp-title{font-size:.52rem;font-family:var(--ff-mono);color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.35rem}
+#vibe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.vibe-opt{padding:.28rem .15rem;border:1px solid rgba(0,229,255,.1);border-radius:4px;text-align:center;cursor:pointer;transition:all .18s;font-size:.54rem;color:var(--text2);line-height:1.3}
+.vibe-opt:hover{border-color:var(--hudb);color:var(--cyan)}
+.vibe-opt.active{border-color:var(--cyan);background:var(--cyan3);color:var(--cyan)}
+.vibe-opt.active.phonk-vibe{border-color:var(--amber);background:var(--amber2);color:var(--amber);animation:phonk-btn-pulse 0.8s ease-in-out infinite alternate}
+.vibe-opt .vo-icon{font-size:.85rem;display:block;margin-bottom:1px}
+#sales-log{height:88px;overflow-y:auto}
+.sale-entry{display:flex;justify-content:space-between;align-items:center;padding:.18rem 0;border-bottom:1px solid rgba(0,229,255,.04);font-size:.58rem}
+.se-name{color:var(--text2);font-family:var(--ff-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+.se-price{color:var(--green);font-family:var(--ff-mono);flex-shrink:0}
+#hall-wrap{height:88px;display:flex;gap:3px;overflow-x:auto;align-items:center}
+.hof-slot{width:48px;height:68px;border:1px solid rgba(0,229,255,.08);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;cursor:default}
+.hof-slot.unlocked{border-color:rgba(0,229,255,.2);background:var(--hud)}
+.hof-slot.locked{background:rgba(0,0,0,.3)}
+.hof-slot .hof-icon{font-size:1.3rem;margin-bottom:2px}
+.hof-slot.locked .hof-icon{filter:grayscale(1) brightness(.25)}
+.hof-slot .hof-name{font-size:.42rem;font-family:var(--ff-mono);color:var(--text3);text-align:center;padding:0 2px;line-height:1.2}
+.hof-slot.locked .hof-name{color:var(--c3)}
+
+/* ── MODALS ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,5,8,.88);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
+.modal-backdrop.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--c1);border:1px solid var(--hudb);border-radius:var(--r2);padding:1.4rem;max-width:460px;width:94vw;transform:translateY(18px);transition:transform .22s;position:relative}
+.modal-backdrop.open .modal-box{transform:translateY(0)}
+.modal-title{font-family:var(--ff-head);font-weight:900;font-style:italic;font-size:1.25rem;color:var(--cyan);margin-bottom:.2rem;text-transform:uppercase;letter-spacing:.05em}
+.modal-sub{font-size:.65rem;color:var(--text3);margin-bottom:.85rem;font-family:var(--ff-mono)}
+.modal-close{position:absolute;top:.7rem;right:.75rem;background:none;border:none;color:var(--text3);font-size:1.1rem;cursor:pointer;transition:color .15s;line-height:1}
+.modal-close:hover{color:var(--red)}
+.modal-row{display:flex;gap:.4rem;align-items:center;margin-bottom:.4rem}
+.modal-label{font-size:.62rem;font-family:var(--ff-mono);color:var(--text3);width:78px;flex-shrink:0}
+.modal-val{font-size:.72rem;font-family:var(--ff-mono);color:var(--text);flex:1}
+.modal-val.cyan{color:var(--cyan)}
+.modal-val.amber{color:var(--amber)}
+.modal-val.green{color:var(--green)}
+.modal-actions{display:flex;gap:.4rem;margin-top:.85rem;flex-wrap:wrap}
+.m-btn{flex:1;padding:.55rem;border:1px solid var(--hudb);border-radius:var(--r);font-family:var(--ff-ui);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;transition:all .15s;color:var(--text);background:var(--hud);white-space:nowrap}
+.m-btn:hover{background:var(--cyan3);border-color:var(--cyan);color:var(--cyan)}
+.m-btn.amber:hover{background:var(--amber2);border-color:var(--amber);color:var(--amber)}
+.m-btn.green:hover{background:rgba(0,230,118,.08);border-color:var(--green);color:var(--green)}
+.m-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── DYNO — ENHANCED ── */
+.gear-indicator{display:flex;gap:4px;justify-content:center;margin:.75rem 0}
+.gear-pip{width:22px;height:22px;border-radius:50%;border:2px solid var(--c3);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-family:var(--ff-mono);color:var(--text3);transition:all .2s}
+.gear-pip.active{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.gear-pip.done{border-color:var(--green);background:rgba(0,230,118,.1);color:var(--green)}
+.gear-pip.critical{border-color:var(--amber);background:rgba(255,171,0,.15);color:var(--amber);box-shadow:0 0 10px var(--amber);animation:critical-pip 0.3s ease-out}
+@keyframes critical-pip{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+
+/* RPM bar — three zones: miss / hit / critical */
+.rpm-bar{height:22px;background:var(--c3);border-radius:3px;overflow:hidden;margin:.4rem 0;position:relative}
+.rpm-fill{height:100%;background:linear-gradient(90deg,var(--cyan2),var(--cyan),var(--amber),var(--red));border-radius:3px;transition:width .06s;width:0}
+/* Perfect zone (green) */
+.rpm-zone-perfect{position:absolute;top:0;height:100%;width:14%;background:rgba(0,230,118,.22);border-left:2px solid var(--green);border-right:2px solid var(--green)}
+/* Critical zone (amber, narrower, inside perfect) */
+.rpm-zone-critical{position:absolute;top:0;height:100%;width:5%;background:rgba(255,171,0,.35);border-left:2px dashed var(--amber);border-right:2px dashed var(--amber)}
+/* Zone labels */
+.rpm-zone-label{position:absolute;top:1px;font-size:.42rem;font-family:var(--ff-mono);pointer-events:none;letter-spacing:.04em;white-space:nowrap}
+
+.dyno-tap-btn{width:100%;padding:.9rem;font-size:1.05rem;font-weight:900;font-family:var(--ff-head);text-transform:uppercase;border:2px solid var(--cyan);border-radius:var(--r);background:var(--cyan3);color:var(--cyan);cursor:pointer;letter-spacing:.1em;transition:all .1s;margin-top:.5rem}
+.dyno-tap-btn:active{transform:scale(.97);background:rgba(0,229,255,.22)}
+.dyno-tap-btn.phonk-btn{border-color:var(--amber);color:var(--amber);background:var(--amber2)}
+
+.dyno-streak{text-align:center;font-size:.62rem;font-family:var(--ff-mono);color:var(--amber);margin-top:.25rem;min-height:1em;letter-spacing:.05em}
+
+/* ── FIRST START ── */
+#start-overlay{position:fixed;inset:0;background:var(--c0);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.85rem}
+#start-overlay h1{font-family:var(--ff-head);font-weight:900;font-style:italic;font-size:clamp(2rem,6vw,3.5rem);color:var(--cyan);letter-spacing:.1em;text-transform:uppercase}
+#start-overlay p{font-size:.72rem;font-family:var(--ff-mono);color:var(--text3);text-align:center;max-width:340px}
+#hold-start{width:180px;height:180px;border-radius:50%;border:3px solid var(--cyan);background:var(--cyan3);color:var(--cyan);font-family:var(--ff-head);font-size:.95rem;font-weight:700;font-style:italic;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;text-align:center;box-shadow:0 0 40px rgba(0,229,255,.15)}
+#hold-start:hover{box-shadow:0 0 70px rgba(0,229,255,.35);transform:scale(1.04)}
+#hold-start:active{transform:scale(.97)}
+
+/* modal first start */
+.modal-backdrop#modal-firststart .modal-box{text-align:center}
+
+/* ── RESPONSIVE SAFE-ZONE: keep viewport-actions above phonk visualizer ── */
+/* phonk-visualizer is 36px tall; add matching bottom clearance to actions  */
+#viewport-actions{padding-bottom:calc(.45rem + 36px)}
+/* At narrow CrazyGames test widths (≤910px) reduce button font/padding    */
+@media(max-width:910px){
+  #viewport-actions{gap:.25rem;padding:.3rem .35rem calc(.3rem + 36px)}
+  .action-node{padding:.25rem .45rem;font-size:.55rem}
+}
+/* ══════════════════════════════════════════════════════════
+   ONBOARDING SYSTEM
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Cinematic intro overlay ── */
+#ob-intro{
+  position:fixed;inset:0;z-index:2000;
+  background:var(--c0);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;overflow:hidden;
+}
+#ob-intro.hidden{display:none}
+
+/* scanline effect on intro */
+#ob-intro::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,229,255,0.03) 3px,rgba(0,229,255,0.03) 4px);
+  pointer-events:none;z-index:1;
+}
+
+.ob-intro-logo{
+  font-family:var(--ff-head);font-weight:900;font-style:italic;
+  font-size:clamp(2.2rem,8vw,5rem);
+  color:var(--cyan);letter-spacing:.12em;text-transform:uppercase;
+  text-shadow:0 0 60px rgba(0,229,255,.4),0 0 120px rgba(0,229,255,.15);
+  animation:ob-logo-in 1s cubic-bezier(.16,1,.3,1) both;
+  position:relative;z-index:2;
+}
+.ob-intro-logo span{color:var(--amber);text-shadow:0 0 60px rgba(255,171,0,.4)}
+@keyframes ob-logo-in{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
+
+.ob-intro-tagline{
+  font-family:var(--ff-mono);font-size:clamp(.55rem,.9vw,.75rem);
+  color:var(--text3);letter-spacing:.28em;text-transform:uppercase;
+  animation:ob-fade-in .8s .5s both;position:relative;z-index:2;margin-top:.5rem;
+}
+@keyframes ob-fade-in{from{opacity:0}to{opacity:1}}
+
+/* Horizontal glowing line divider */
+.ob-divider{
+  width:min(420px,80vw);height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  margin:2rem 0;animation:ob-fade-in .6s .9s both;position:relative;z-index:2;
+}
+
+/* Core loop preview — 3 pillars */
+.ob-loop{
+  display:flex;align-items:center;gap:0;
+  animation:ob-fade-in .7s 1.1s both;position:relative;z-index:2;
+}
+.ob-pillar{
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  padding:1rem 1.4rem;
+  border:1px solid var(--hudb);border-radius:var(--r2);
+  background:var(--hud);
+  min-width:110px;text-align:center;
+}
+.ob-pillar-icon{font-size:1.8rem;line-height:1}
+.ob-pillar-label{
+  font-family:var(--ff-head);font-weight:900;font-style:italic;
+  font-size:.85rem;color:var(--cyan);letter-spacing:.06em;text-transform:uppercase;
+}
+.ob-pillar-sub{font-family:var(--ff-mono);font-size:.5rem;color:var(--text3);line-height:1.4}
+/* Arrow between pillars */
+.ob-arrow{
+  font-size:1.1rem;color:var(--amber);margin:0 .3rem;
+  text-shadow:0 0 10px var(--amber);flex-shrink:0;
+  animation:ob-arrow-pulse 1.2s 1.5s ease-in-out infinite alternate;
+}
+@keyframes ob-arrow-pulse{from{opacity:.5;transform:translateX(-3px)}to{opacity:1;transform:translateX(3px)}}
+
+/* Starting capital callout */
+.ob-capital{
+  font-family:var(--ff-mono);font-size:.7rem;color:var(--text2);
+  background:rgba(255,171,0,.07);border:1px solid rgba(255,171,0,.25);
+  border-radius:var(--r);padding:.45rem 1.1rem;
+  animation:ob-fade-in .7s 1.4s both;position:relative;z-index:2;margin-top:.5rem;
+}
+.ob-capital strong{color:var(--amber);font-size:.85rem}
+
+/* CTA button on intro */
+.ob-cta{
+  margin-top:1.2rem;
+  padding:.75rem 2.5rem;
+  font-family:var(--ff-head);font-weight:900;font-style:italic;
+  font-size:1rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--c0);background:var(--cyan);
+  border:none;border-radius:var(--r2);cursor:pointer;
+  box-shadow:0 0 30px rgba(0,229,255,.35);
+  transition:all .18s;
+  animation:ob-fade-in .7s 1.7s both;position:relative;z-index:2;
+}
+.ob-cta:hover{background:#fff;box-shadow:0 0 55px rgba(0,229,255,.6);transform:scale(1.04)}
+.ob-cta:active{transform:scale(.97)}
+
+/* ── Tutorial tooltip system ── */
+#ob-tooltip{
+  position:fixed;z-index:1500;
+  max-width:280px;width:max-content;
+  background:rgba(2,13,20,.97);
+  border:1px solid var(--cyan);border-radius:var(--r2);
+  padding:.85rem 1rem;
+  box-shadow:0 0 30px rgba(0,229,255,.2),0 8px 32px rgba(0,0,0,.6);
+  pointer-events:none;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .25s,transform .25s;
+}
+#ob-tooltip.visible{opacity:1;transform:translateY(0);pointer-events:all}
+#ob-tooltip.hidden{display:none}
+
+.ob-tip-step{
+  font-family:var(--ff-mono);font-size:.45rem;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.15em;margin-bottom:.35rem;
+}
+.ob-tip-title{
+  font-family:var(--ff-head);font-weight:900;font-style:italic;
+  font-size:.95rem;color:var(--cyan);margin-bottom:.3rem;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.ob-tip-body{
+  font-family:var(--ff-ui);font-size:.68rem;color:var(--text2);
+  line-height:1.5;margin-bottom:.6rem;
+}
+.ob-tip-actions{display:flex;gap:.4rem;align-items:center}
+.ob-tip-btn{
+  padding:.3rem .8rem;
+  font-family:var(--ff-ui);font-size:.62rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.05em;
+  border-radius:var(--r);cursor:pointer;border:1px solid;
+  transition:all .15s;pointer-events:all;
+}
+.ob-tip-btn.primary{background:var(--cyan);border-color:var(--cyan);color:var(--c0)}
+.ob-tip-btn.primary:hover{background:#fff;border-color:#fff}
+.ob-tip-btn.skip{background:transparent;border-color:var(--text3);color:var(--text3)}
+.ob-tip-btn.skip:hover{border-color:var(--text2);color:var(--text2)}
+.ob-tip-dots{display:flex;gap:4px;margin-left:auto}
+.ob-dot{width:6px;height:6px;border-radius:50%;background:var(--c3);transition:background .2s}
+.ob-dot.active{background:var(--cyan)}
+
+/* Tooltip arrow pointer */
+#ob-tooltip::before{
+  content:'';position:absolute;
+  border:6px solid transparent;
+}
+#ob-tooltip.arrow-top::before{
+  top:-12px;left:24px;
+  border-bottom-color:var(--cyan);
+}
+#ob-tooltip.arrow-bottom::before{
+  bottom:-12px;left:24px;
+  border-top-color:var(--cyan);
+}
+#ob-tooltip.arrow-left::before{
+  left:-12px;top:20px;
+  border-right-color:var(--cyan);
+}
+#ob-tooltip.arrow-right::before{
+  right:-12px;top:20px;
+  border-left-color:var(--cyan);
+}
+
+/* ── Spotlight / highlight ring ── */
+#ob-spotlight{
+  position:fixed;z-index:1400;
+  border-radius:var(--r2);
+  box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72);
+  pointer-events:none;
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+  opacity:0;
+}
+#ob-spotlight.visible{opacity:1}
+
+/* Goal ribbon — persistent top-of-screen prompt */
+#ob-goal{
+  position:fixed;top:52px;left:50%;transform:translateX(-50%);
+  z-index:1300;
+  background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.35);
+  border-radius:0 0 var(--r2) var(--r2);
+  padding:.3rem 1.2rem;
+  font-family:var(--ff-mono);font-size:.55rem;color:var(--cyan);
+  letter-spacing:.1em;text-transform:uppercase;
+  display:flex;align-items:center;gap:.5rem;
+  white-space:nowrap;pointer-events:none;
+  opacity:0;transition:opacity .3s;
+}
+#ob-goal.visible{opacity:1}
+#ob-goal-icon{font-size:.75rem;animation:ob-goal-bounce .8s ease-in-out infinite alternate}
+@keyframes ob-goal-bounce{from{transform:translateY(-1px)}to{transform:translateY(2px)}}
+
+/* Pulse ring on highlighted element */
+@keyframes ob-ring-pulse{
+  0%{box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72),0 0 0 6px rgba(0,229,255,.4)}
+  50%{box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72),0 0 0 12px rgba(0,229,255,.15)}
+  100%{box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72),0 0 0 6px rgba(0,229,255,.4)}
+}
+#ob-spotlight.pulse{animation:ob-ring-pulse 1.6s ease-in-out infinite}
+
+/* ── DISABLE any fullscreen button this game might accidentally include ── */
+/* (CrazyGames supplies its own fullscreen button; a second one is banned)  */
+#btn-fullscreen{display:none!important}
+@media(max-width:900px){
+  #app{grid-template-columns:1fr;grid-template-rows:48px 1fr auto}
+  #panel-left,#panel-right{display:none}
+  #bottom-bar{grid-template-columns:1fr;height:auto}
+  .bottom-pane+.bottom-pane{border-left:none;border-top:1px solid rgba(0,229,255,.07)}
+  #hall-wrap{height:60px}
+  #sales-log{height:60px}
+}
+@media(max-width:600px){
+  .hud-stat{min-width:55px}
+  .hud-stat .val{font-size:.7rem}
+  .hud-logo{font-size:.9rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     ONBOARDING — CINEMATIC INTRO
+     ══════════════════════════════════════════════════════════ -->
+<div id="ob-intro">
+  <div class="ob-intro-logo">AEVITH<span> MOTO</span></div>
+  <div class="ob-intro-tagline">Superbike Tycoon &mdash; Phonk Edition</div>
+  <div class="ob-divider"></div>
+
+  <!-- Core loop pillars -->
+  <div class="ob-loop">
+    <div class="ob-pillar">
+      <div class="ob-pillar-icon">🏍️</div>
+      <div class="ob-pillar-label">BUY</div>
+      <div class="ob-pillar-sub">Bid on wrecked<br>frames at auction</div>
+    </div>
+    <div class="ob-arrow">▶</div>
+    <div class="ob-pillar">
+      <div class="ob-pillar-icon">🔧</div>
+      <div class="ob-pillar-label">RESTORE</div>
+      <div class="ob-pillar-sub">Tune engine, aero<br>&amp; ECU modules</div>
+    </div>
+    <div class="ob-arrow">▶</div>
+    <div class="ob-pillar">
+      <div class="ob-pillar-icon">💰</div>
+      <div class="ob-pillar-label">SELL</div>
+      <div class="ob-pillar-sub">Private viewings<br>to the highest bidder</div>
+    </div>
+  </div>
+
+  <div class="ob-capital">
+    You start with <strong>₹60,000</strong> &mdash; enough to land your first frame.
+  </div>
+
+  <button class="ob-cta" onclick="startOnboarding()">START YOUR GARAGE ⚡</button>
+</div>
+
+<!-- ── Tutorial tooltip (positioned dynamically by JS) ── -->
+<div id="ob-tooltip" class="hidden">
+  <div class="ob-tip-step" id="ob-tip-step">STEP 1 / 5</div>
+  <div class="ob-tip-title" id="ob-tip-title">—</div>
+  <div class="ob-tip-body" id="ob-tip-body">—</div>
+  <div class="ob-tip-actions">
+    <button class="ob-tip-btn primary" onclick="obNext()">GOT IT →</button>
+    <button class="ob-tip-btn skip" onclick="obSkip()">SKIP TOUR</button>
+    <div class="ob-tip-dots" id="ob-tip-dots"></div>
+  </div>
+</div>
+
+<!-- ── Spotlight highlight ring ── -->
+<div id="ob-spotlight"></div>
+
+<!-- ── Persistent goal ribbon ── -->
+<div id="ob-goal">
+  <span id="ob-goal-icon">▼</span>
+  <span id="ob-goal-text">CLICK + BUY BIKE TO BEGIN</span>
+</div>
+
+<!-- BOOT SCREEN (legacy, now hidden — onboarding replaces it) -->
+<div id="start-overlay" style="display:none">
+  <h1>AEVITH<span style="color:var(--amber)"> MOTO</span></h1>
+  <p>SUPERBIKE TYCOON &mdash; BUILD THE LOUDEST MACHINES ON THE PLANET</p>
+  <button id="hold-start" onclick="cgLoadingFinished();bootGame()">ENTER<br>GARAGE</button>
+  <p style="font-size:.55rem;color:var(--c3);margin-top:.25rem">STARK-CLASS RESTORATION ENGINE v2.0 · PHONK EDITION</p>
+</div>
+
+<!-- APP SHELL -->
+<div id="app" style="display:none">
+
+  <!-- HUD BAR -->
+  <div id="hud-top">
+    <div class="hud-logo" id="hud-logo">AEVITH<span>MOTO</span></div>
+    <div class="hud-sep"></div>
+    <div class="hud-stat">
+      <label>Capital</label>
+      <div class="val gold" id="hud-money">&#8377;0</div>
+    </div>
+    <div class="hud-stat">
+      <label>Rep</label>
+      <div class="val" id="hud-rep">0</div>
+    </div>
+    <div class="hud-stat">
+      <label>Level</label>
+      <div class="val" id="hud-level">1</div>
+      <div class="hud-level-bar"><div class="hud-level-fill" id="hud-xp-bar" style="width:0%"></div></div>
+    </div>
+    <div class="hud-stat">
+      <label>Vibe</label>
+      <div class="val green" id="hud-vibe">0%</div>
+    </div>
+    <div class="hud-sep"></div>
+    <button class="hud-btn amber" onclick="openDailyAuction()">&#9889; DAILY MYTHIC</button>
+    <button class="hud-btn" onclick="openDyno()">DYNO RUN</button>
+    <button class="hud-btn" onclick="openAuction()">+ BUY BIKE</button>
+    <!-- PHONK CONTROL -->
+    <button class="hud-btn amber" id="phonk-toggle-btn" onclick="togglePhonk()">&#127925; PHONK OFF</button>
+    <span id="save-flash">SAVED</span>
+  </div>
+
+  <!-- LEFT -->
+  <div id="panel-left">
+    <div class="p-section">
+      <div class="p-section-title">Garage Bays</div>
+      <div id="garage-slots"></div>
+      <div style="display:flex;gap:.3rem;margin-top:.4rem">
+        <button class="action-node" style="flex:1;font-size:.58rem;justify-content:center" onclick="openAuction()">+ ACQUIRE</button>
+        <button class="action-node amber" style="flex:1;font-size:.58rem;justify-content:center" onclick="repairBike(10)">REPAIR</button>
+        <button class="action-node" style="flex:1;font-size:.58rem;justify-content:center;color:var(--red);border-color:rgba(255,23,68,.3)" onclick="sellCurrentBike()">SELL</button>
+      </div>
+    </div>
+    <div class="p-section">
+      <div class="p-section-title">Restoration Modules</div>
+      <div class="module-slider-wrap" style="padding:.3rem 0 0;border:none">
+        <div class="module-name">Engine Core <span id="mod-engine-val">0</span></div>
+        <div class="slider-track">
+          <div class="slider-fill" id="mod-engine-fill" style="width:0%"></div>
+          <input type="range" class="hud-slider" id="mod-engine" min="0" max="100" value="0" oninput="updateModule('engine',this.value)">
+        </div>
+      </div>
+      <div class="module-slider-wrap" style="padding:.3rem 0 0;border:none">
+        <div class="module-name">Aero Fairings <span id="mod-aero-val">0</span></div>
+        <div class="slider-track">
+          <div class="slider-fill" id="mod-aero-fill" style="width:0%"></div>
+          <input type="range" class="hud-slider" id="mod-aero" min="0" max="100" value="0" oninput="updateModule('aero',this.value)">
+        </div>
+      </div>
+      <div class="module-slider-wrap" style="padding:.3rem 0 0;border:none">
+        <div class="module-name">ECU Tuning <span id="mod-ecu-val">0</span></div>
+        <div class="slider-track">
+          <div class="slider-fill" id="mod-ecu-fill" style="width:0%"></div>
+          <input type="range" class="hud-slider" id="mod-ecu" min="0" max="100" value="0" oninput="updateModule('ecu',this.value)">
+        </div>
+      </div>
+      <div class="cond-display">
+        <span style="font-size:.58rem;font-family:var(--ff-mono);color:var(--text3);width:55px;flex-shrink:0">Condition</span>
+        <div class="cond-bar"><div class="cond-bar-fill" id="cond-fill" style="width:0%"></div></div>
+        <span class="cond-pct" id="cond-pct">0%</span>
+      </div>
+      <div style="display:flex;gap:.3rem;margin-top:.4rem">
+        <button class="action-node amber" style="flex:1;font-size:.58rem;justify-content:center" onclick="openPrivateViewing()">&#128065; PRIVATE VIEWING</button>
+        <button class="action-node green" style="flex:1;font-size:.58rem;justify-content:center" id="btn-first-start-l" onclick="openFirstStart()">&#128293; FIRST START</button>
+      </div>
+    </div>
+    <div id="skill-tree">
+      <div class="p-section-title" style="margin-bottom:.4rem">Tech Tree</div>
+    </div>
+  </div>
+
+  <!-- CENTER VIEWPORT -->
+  <div id="viewport-wrap">
+    <canvas id="three-canvas"></canvas>
+    <!-- PHONK VISUALIZER -->
+    <div id="phonk-visualizer"></div>
+    <div id="center-hud"></div>
+    <div id="viewport-actions">
+      <button class="action-node" onclick="toggleWireframe()">&#11041; X-RAY</button>
+      <button class="action-node" onclick="toggleGarageMode()">&#127981; HANGAR</button>
+      <button class="action-node green" onclick="openFirstStart()" id="btn-first-start">&#128293; FIRST START</button>
+      <button class="action-node amber" onclick="openPrivateViewing()">&#128065; PRIVATE VIEW</button>
+      <button class="action-node" onclick="rotateView(-1)">&#9664; ROTATE</button>
+      <button class="action-node" onclick="rotateView(1)">&#9654; ROTATE</button>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div id="panel-right">
+    <div class="p-section" style="padding-bottom:.4rem">
+      <div class="p-section-title">Live Auction Feed</div>
+      <button class="action-node" style="width:100%;justify-content:center;font-size:.58rem" onclick="generateAuctions();renderAuctions()">&#8635; REFRESH FEED</button>
+    </div>
+    <div id="auction-list"></div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div id="bottom-bar">
+    <div class="bottom-pane">
+      <div class="bp-title">Showroom Vibe</div>
+      <div id="vibe-grid"></div>
+    </div>
+    <div class="bottom-pane">
+      <div class="bp-title">Sales Log</div>
+      <div id="sales-log"></div>
+    </div>
+    <div class="bottom-pane">
+      <div class="bp-title">Hall of Fame</div>
+      <div id="hall-wrap"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODALS -->
+
+<!-- Auction Detail -->
+<div class="modal-backdrop" id="modal-auction">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-auction')">&#10005;</button>
+    <div class="modal-title" id="ma-title">—</div>
+    <div class="modal-sub" id="ma-sub">—</div>
+    <div class="modal-row"><span class="modal-label">Bid Price</span><span class="modal-val amber" id="ma-price">—</span></div>
+    <div class="modal-row"><span class="modal-label">Frame Cond.</span><span class="modal-val" id="ma-cond">—</span></div>
+    <div class="modal-row"><span class="modal-label">Engine</span><span class="modal-val cyan" id="ma-engine">—</span></div>
+    <div class="modal-row"><span class="modal-label">Est. Resale</span><span class="modal-val green" id="ma-sell">—</span></div>
+    <div class="modal-row"><span class="modal-label">Rarity</span><span class="modal-val" id="ma-rarity">—</span></div>
+    <div class="modal-actions">
+      <button class="m-btn amber" id="ma-buy-btn" onclick="confirmBuy()">BUY FRAME</button>
+      <button class="m-btn" onclick="closeModal('modal-auction')">PASS</button>
+    </div>
+  </div>
+</div>
+
+<!-- Private Viewing -->
+<div class="modal-backdrop" id="modal-viewing">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-viewing')">&#10005;</button>
+    <div class="modal-title">Private Viewing</div>
+    <div class="modal-sub" id="pv-sub">Showcase your build to collectors</div>
+    <div class="modal-row"><span class="modal-label">Bike</span><span class="modal-val" id="pv-bike">—</span></div>
+    <div class="modal-row"><span class="modal-label">Build Score</span><span class="modal-val cyan" id="pv-score">—</span></div>
+    <div class="modal-row"><span class="modal-label">Vibe Bonus</span><span class="modal-val green" id="pv-vibe">—</span></div>
+    <div class="modal-row"><span class="modal-label">Dyno HP</span><span class="modal-val" id="pv-hp">—</span></div>
+    <div class="modal-row"><span class="modal-label">Top Bid</span><span class="modal-val amber" id="pv-bid">—</span></div>
+    <div id="pv-buyers" style="display:flex;gap:.35rem;flex-wrap:wrap;margin:.4rem 0"></div>
+    <div class="modal-actions">
+      <button class="m-btn green" onclick="acceptBid()">ACCEPT BID</button>
+      <button class="m-btn amber" id="pv-rewarded-btn" onclick="watchAdDoubleSale()" title="Watch a short ad to double your sale price!">&#9654; WATCH AD × 2</button>
+      <button class="m-btn" onclick="closeModal('modal-viewing')">HOLD OUT</button>
+    </div>
+  </div>
+</div>
+
+<!-- First Start -->
+<div class="modal-backdrop" id="modal-firststart">
+  <div class="modal-box" style="text-align:center">
+    <button class="modal-close" onclick="stopIgnition();closeModal('modal-firststart')">&#10005;</button>
+    <div class="modal-title" style="text-align:center">FIRST START</div>
+    <div class="modal-sub" style="text-align:center">Hold ignition — let the machine wake up</div>
+    <div id="exhaust-display" style="font-size:2.8rem;margin:.75rem 0;transition:all .2s;min-height:50px">&#127949;&#65039;</div>
+    <div style="height:7px;background:var(--c3);border-radius:4px;overflow:hidden;margin:.4rem 0">
+      <div id="start-progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--cyan2),var(--cyan));border-radius:4px;transition:width .08s"></div>
+    </div>
+    <button id="hold-ignition-btn" style="width:100%;padding:1.1rem;margin-top:.4rem;font-size:1rem;font-weight:900;font-family:var(--ff-head);text-transform:uppercase;border:2px solid var(--amber);border-radius:var(--r);background:var(--amber2);color:var(--amber);cursor:pointer;letter-spacing:.1em;user-select:none"
+      onmousedown="startIgnition()" ontouchstart="startIgnition(event)" onmouseup="stopIgnition()" ontouchend="stopIgnition()">HOLD TO IGNITE</button>
+    <div id="start-status" style="margin-top:.4rem;font-size:.6rem;font-family:var(--ff-mono);color:var(--text3)">READY — HOLD TO START</div>
+  </div>
+</div>
+
+<!-- DYNO — Enhanced -->
+<div class="modal-backdrop" id="dyno-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="endDyno();closeModal('dyno-modal')">&#10005;</button>
+    <div class="modal-title">Dyno Machine</div>
+    <div class="modal-sub">
+      Hit <span style="color:var(--green)">GREEN</span> for Perfect · Hit <span style="color:var(--amber)">AMBER</span> for <b>CRITICAL BOOST ×1.5</b>
+    </div>
+    <div class="gear-indicator" id="gear-pips"></div>
+    <div style="display:flex;justify-content:space-between;font-size:.6rem;font-family:var(--ff-mono);color:var(--text3);margin-bottom:.2rem">
+      <span>RPM GAUGE</span>
+      <span id="dyno-rpm-val">0 RPM</span>
+    </div>
+    <!-- Enhanced RPM bar with three zones -->
+    <div class="rpm-bar" id="rpm-bar-wrap">
+      <div class="rpm-fill" id="rpm-fill"></div>
+      <!-- Perfect zone: 74–88% -->
+      <div class="rpm-zone-perfect" id="zone-perfect" style="left:74%">
+        <span class="rpm-zone-label" style="color:var(--green);left:2px">PERFECT</span>
+      </div>
+      <!-- Critical zone: 80–85%, inside perfect -->
+      <div class="rpm-zone-critical" id="zone-critical" style="left:80%">
+        <span class="rpm-zone-label" style="color:var(--amber);left:1px">CRIT</span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin:.3rem 0;font-size:.62rem;font-family:var(--ff-mono)">
+      <span style="color:var(--text3)">Accumulated HP</span>
+      <span style="color:var(--cyan)" id="dyno-hp">0 HP</span>
+    </div>
+    <!-- Streak counter -->
+    <div class="dyno-streak" id="dyno-streak"></div>
+    <button class="dyno-tap-btn" id="dyno-tap" onclick="dynoTap()">SHIFT GEAR &#9889;</button>
+    <div id="dyno-result" style="margin-top:.4rem;text-align:center;font-size:.65rem;font-family:var(--ff-mono);color:var(--text3);min-height:1.2em"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  ██████╗ ██╗  ██╗ ██████╗ ███╗   ██╗██╗  ██╗
+//  ██╔══██╗██║  ██║██╔═══██╗████╗  ██║██║ ██╔╝
+//  ██████╔╝███████║██║   ██║██╔██╗ ██║█████╔╝
+//  ██╔═══╝ ██╔══██║██║   ██║██║╚██╗██║██╔═██╗
+//  ██║     ██║  ██║╚██████╔╝██║ ╚████║██║  ██╗
+//  AUDIO MANAGER — PHONK ENGINE v2.0
+// ════════════════════════════════════════════════════════════
+
+const AudioMgr = (() => {
+  let ctx = null, masterGain = null;
+  let tracks = [], currentTrack = -1, playing = false;
+  let analyser = null, analyserData = null;
+  let beatCallbacks = [];
+  let beatEnergy = 0, prevEnergy = 0, beatThreshold = 1.4;
+
+  // ── Procedural Phonk Synthesizer ──────────────────────────
+  // We generate phonk-style beats using the Web Audio API so
+  // no external audio files are needed.
+  function createPhonkLoop(ctx, gain) {
+    const dur = 1.882; // ~128 BPM bar
+    const start = ctx.currentTime;
+
+    function schedule(time) {
+      // ── 808 KICK (dark booming) ──
+      [0, 0.941, 1.176].forEach(offset => {
+        const osc  = ctx.createOscillator();
+        const gKck = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(120, time + offset);
+        osc.frequency.exponentialRampToValueAtTime(30, time + offset + 0.22);
+        gKck.gain.setValueAtTime(1.0, time + offset);
+        gKck.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.42);
+        osc.connect(gKck); gKck.connect(gain);
+        osc.start(time + offset); osc.stop(time + offset + 0.44);
+      });
+
+      // ── HI-HAT (16th note swing) ──
+      [0, 0.118, 0.235, 0.353, 0.47, 0.588, 0.706, 0.824].forEach((o, i) => {
+        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.055, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let k = 0; k < data.length; k++) data[k] = (Math.random() * 2 - 1) * (1 - k / data.length);
+        const src = ctx.createBufferSource();
+        const bqf = ctx.createBiquadFilter();
+        const gHH = ctx.createGain();
+        bqf.type = 'highpass'; bqf.frequency.value = 7200;
+        gHH.gain.value = i % 2 === 0 ? 0.18 : 0.08;
+        src.buffer = buf;
+        src.connect(bqf); bqf.connect(gHH); gHH.connect(gain);
+        src.start(time + o);
+      });
+
+      // ── SNARE (punchy) at beat 2 & 4 ──
+      [0.47, 1.41].forEach(offset => {
+        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let k = 0; k < data.length; k++) data[k] = (Math.random() * 2 - 1) * Math.exp(-k / (ctx.sampleRate * 0.035));
+        const src  = ctx.createBufferSource();
+        const bqf  = ctx.createBiquadFilter();
+        const oscS = ctx.createOscillator();
+        const gS   = ctx.createGain();
+        const gN   = ctx.createGain();
+        bqf.type = 'bandpass'; bqf.frequency.value = 2800; bqf.Q.value = 0.8;
+        gS.gain.setValueAtTime(0.55, time + offset);
+        gS.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.16);
+        gN.gain.setValueAtTime(0.3, time + offset);
+        gN.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.14);
+        oscS.type = 'triangle'; oscS.frequency.value = 220;
+        src.buffer = buf;
+        src.connect(bqf); bqf.connect(gN); gN.connect(gain);
+        oscS.connect(gS); gS.connect(gain);
+        src.start(time + offset); oscS.start(time + offset);
+        src.stop(time + offset + 0.2); oscS.stop(time + offset + 0.2);
+      });
+
+      // ── BASS STAB (phonk sub) ──
+      [0, 0.235, 0.706, 0.941].forEach((offset, i) => {
+        const osc  = ctx.createOscillator();
+        const dist = ctx.createWaveShaper();
+        const gB   = ctx.createGain();
+        const curve = new Float32Array(256);
+        for (let k = 0; k < 256; k++) { const x = k * 2 / 256 - 1; curve[k] = (Math.PI + 280) * x / (Math.PI + 280 * Math.abs(x)); }
+        dist.curve = curve;
+        osc.type = 'sawtooth';
+        osc.frequency.value = [55, 55, 73.4, 55][i];
+        gB.gain.setValueAtTime(0.28, time + offset);
+        gB.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.21);
+        osc.connect(dist); dist.connect(gB); gB.connect(gain);
+        osc.start(time + offset); osc.stop(time + offset + 0.25);
+      });
+    }
+
+    return { dur, schedule, start };
+  }
+
+  function init() {
+    if (ctx) return;
+    ctx          = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain   = ctx.createGain();
+    masterGain.gain.value = 0.55;
+    analyser     = ctx.createAnalyser();
+    analyser.fftSize = 64;
+    analyserData = new Uint8Array(analyser.frequencyBinCount);
+    masterGain.connect(analyser);
+    analyser.connect(ctx.destination);
+  }
+
+  function play() {
+    if (playing) return;
+    init();
+    if (ctx.state === 'suspended') ctx.resume();
+    playing = true;
+    scheduleLoop();
+    requestAnimationFrame(beatLoop);
+  }
+
+  let loopTimeout = null;
+  function scheduleLoop() {
+    if (!playing) return;
+    const loop = createPhonkLoop(ctx, masterGain);
+    loop.schedule(ctx.currentTime);
+    loopTimeout = setTimeout(scheduleLoop, loop.dur * 1000 - 50);
+  }
+
+  function stop() {
+    playing = false;
+    clearTimeout(loopTimeout);
+  }
+
+  function toggle() { playing ? stop() : play(); return playing; }
+  function isPlaying() { return playing; }
+
+  // ── Beat Detection Loop ──────────────────────────────────
+  function beatLoop() {
+    if (!analyser || !playing) return;
+    analyser.getByteFrequencyData(analyserData);
+    // Average low-frequency bins (kick/bass energy)
+    let sum = 0;
+    for (let i = 0; i < 4; i++) sum += analyserData[i];
+    const energy = sum / 4 / 255;
+
+    beatEnergy = beatEnergy * 0.82 + energy * 0.18; // smooth
+
+    if (energy > beatEnergy * beatThreshold && energy > 0.12) {
+      beatCallbacks.forEach(cb => cb(energy));
+    }
+    prevEnergy = energy;
+    requestAnimationFrame(beatLoop);
+  }
+
+  function onBeat(cb) { beatCallbacks.push(cb); }
+
+  // Expose analyser data for visualizer
+  function getFreqData() {
+    if (!analyser || !analyserData) return null;
+    analyser.getByteFrequencyData(analyserData);
+    return analyserData;
+  }
+
+  return { play, stop, toggle, isPlaying, onBeat, getFreqData };
+})();
+
+// ════════════════════════════════════════════════════════════
+//  PHONK VISUALIZER
+// ════════════════════════════════════════════════════════════
+const VIZ_BARS = 20;
+function initVisualizer() {
+  const el = document.getElementById('phonk-visualizer');
+  el.innerHTML = '';
+  for (let i = 0; i < VIZ_BARS; i++) {
+    const b = document.createElement('div');
+    b.className = 'viz-bar';
+    b.id = 'vb-' + i;
+    el.appendChild(b);
+  }
+}
+
+function updateVisualizer() {
+  const data = AudioMgr.getFreqData();
+  if (!data) return;
+  const el = document.getElementById('phonk-visualizer');
+  const active = AudioMgr.isPlaying();
+  el.classList.toggle('active', active);
+  if (!active) return;
+  const step = Math.floor(data.length / VIZ_BARS);
+  for (let i = 0; i < VIZ_BARS; i++) {
+    const val  = data[i * step] / 255;
+    const h    = Math.max(2, Math.floor(val * 32));
+    const bar  = document.getElementById('vb-' + i);
+    if (bar) {
+      bar.style.height = h + 'px';
+      // Tint: low freq = amber, high freq = cyan
+      const ratio  = i / VIZ_BARS;
+      const r      = Math.floor(0 + ratio * 255);
+      const g      = Math.floor(229 - ratio * 100);
+      const b2     = Math.floor(255 - ratio * 255);
+      bar.style.background = `linear-gradient(to top, rgb(${r},${g},${b2}), rgba(${r},${g},${b2},0.4))`;
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  GLOBAL PHONK STATE & BEAT REACTIONS
+// ════════════════════════════════════════════════════════════
+let phonkEnabled = false;
+
+function togglePhonk() {
+  phonkEnabled = AudioMgr.toggle();
+  const btn = document.getElementById('phonk-toggle-btn');
+  btn.textContent = phonkEnabled ? '🎵 PHONK ON' : '🎵 PHONK OFF';
+  btn.classList.toggle('phonk-active', phonkEnabled);
+  if (phonkEnabled) {
+    floatText('🔊 PHONK MODE ENGAGED', 'var(--amber)');
+  } else {
+    floatText('🔇 PHONK OFF', 'var(--text3)');
+    document.getElementById('phonk-visualizer').classList.remove('active');
+  }
+}
+
+// Beat reactions: flash HUD, pulse logo, flash neon lights in scene
+AudioMgr.onBeat((energy) => {
+  // HUD flash
+  const hud = document.getElementById('hud-top');
+  const logo = document.getElementById('hud-logo');
+  hud.classList.add('beat-flash');
+  logo.classList.add('beat-pulse');
+  setTimeout(() => { hud.classList.remove('beat-flash'); logo.classList.remove('beat-pulse'); }, 120);
+
+  // Scale money value on beat
+  const money = document.getElementById('hud-money');
+  if (money) { money.style.transform = 'scale(1.12)'; setTimeout(() => money.style.transform = '', 100); }
+
+  // Pulse neon emission in Three.js
+  if (accentMaterials && accentMaterials.length) {
+    accentMaterials.forEach(m => {
+      m.emissiveIntensity = 0.9 + energy * 1.2;
+    });
+    setTimeout(() => {
+      accentMaterials.forEach(m => m.emissiveIntensity = BASE_EMISSION);
+    }, 110);
+  }
+
+  // Flash vibe opts with phonk music active
+  document.querySelectorAll('.vibe-opt.active.phonk-vibe').forEach(el => {
+    el.style.transform = 'scale(1.06)';
+    setTimeout(() => el.style.transform = '', 100);
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+//  CRAZYGAMES SDK — ADS + ANALYTICS
+// ════════════════════════════════════════════════════════════
+
+// ── Analytics helpers ────────────────────────────────────────
+function cgLoadingFinished() {
+  try {
+    if (window.CrazyGames && window.CrazyGames.SDK) {
+      window.CrazyGames.SDK.game.loadingFinished();
+    }
+  } catch(e) { console.warn('[CG SDK] loadingFinished failed:', e); }
+}
+
+function cgGameplayStart() {
+  try {
+    if (window.CrazyGames && window.CrazyGames.SDK) {
+      window.CrazyGames.SDK.game.gameplayStart();
+    }
+  } catch(e) {}
+}
+
+function cgGameplayStop() {
+  try {
+    if (window.CrazyGames && window.CrazyGames.SDK) {
+      window.CrazyGames.SDK.game.gameplayStop();
+    }
+  } catch(e) {}
+}
+
+// ── Ad state tracking ────────────────────────────────────────
+let _adInProgress = false;
+let _phonkWasPlayingBeforeAd = false;
+
+// Pause game + mute audio before any ad
+function _adPreRoll() {
+  if (_adInProgress) return;
+  _adInProgress = true;
+  _phonkWasPlayingBeforeAd = AudioMgr.isPlaying();
+  if (_phonkWasPlayingBeforeAd) AudioMgr.stop();
+  cgGameplayStop();
+}
+
+// Resume game + unmute audio after ad completes (success, skip, or error)
+function _adPostRoll() {
+  _adInProgress = false;
+  if (_phonkWasPlayingBeforeAd) {
+    AudioMgr.play();
+    phonkEnabled = true;
+    const btn = document.getElementById('phonk-toggle-btn');
+    if (btn) { btn.textContent = '🎵 PHONK ON'; btn.classList.add('phonk-active'); }
+  }
+  cgGameplayStart();
+}
+
+// ── Midgame Ad (fires every N bike purchases) ────────────────
+let _bikePurchasesSinceLastAd = 0;
+const MIDGAME_AD_EVERY_N_PURCHASES = 3;
+
+function requestMidgameAd() {
+  _bikePurchasesSinceLastAd++;
+  if (_bikePurchasesSinceLastAd < MIDGAME_AD_EVERY_N_PURCHASES) return;
+  _bikePurchasesSinceLastAd = 0;
+  if (!window.CrazyGames || !window.CrazyGames.SDK) return;
+  _adPreRoll();
+  window.CrazyGames.SDK.ad.requestAd('midgame', {
+    adStarted:  () => {},
+    adFinished: () => { _adPostRoll(); },
+    adError:    (err) => { console.warn('[CG SDK] midgame ad error:', err); _adPostRoll(); },
+  });
+}
+
+// ── Rewarded Ad (watch ad → double sale price) ───────────────
+let _rewardedAdPending = false;
+
+function watchAdDoubleSale() {
+  if (_adInProgress || _rewardedAdPending) return;
+  if (!window._pendingBid) { floatText('NO PENDING BID', 'var(--red)'); return; }
+  if (!window.CrazyGames || !window.CrazyGames.SDK) {
+    // Graceful fallback in local/dev environments
+    floatText('ADS NOT AVAILABLE', 'var(--text3)');
+    return;
+  }
+  _rewardedAdPending = true;
+  _adPreRoll();
+  const btn = document.getElementById('pv-rewarded-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ LOADING AD…'; }
+  window.CrazyGames.SDK.ad.requestAd('rewarded', {
+    adStarted: () => {
+      if (btn) btn.textContent = '▶ AD PLAYING…';
+    },
+    adFinished: () => {
+      _rewardedAdPending = false;
+      _adPostRoll();
+      if (btn) { btn.disabled = false; btn.textContent = '⭐ REWARD EARNED!'; }
+      if (window._pendingBid) {
+        window._pendingBid.price *= 2;
+        const bidEl = document.getElementById('pv-bid');
+        if (bidEl) bidEl.textContent = '₹' + Math.floor(window._pendingBid.price).toLocaleString('en-IN') + ' ×2 🔥';
+        floatText('🔥 SALE PRICE DOUBLED!', 'var(--amber)');
+      }
+    },
+    adError: (err) => {
+      console.warn('[CG SDK] rewarded ad error:', err);
+      _rewardedAdPending = false;
+      _adPostRoll();
+      if (btn) { btn.disabled = false; btn.textContent = '▶ WATCH AD × 2'; }
+      floatText('AD UNAVAILABLE', 'var(--text3)');
+    },
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  SAVE / CONSTANTS
+// ════════════════════════════════════════════════════════════
+const SAVE_KEY = 'aevith_moto_v2';
+
+// ── BIKE DATABASE ─────────────────────────────────────────────
+const BIKES = [
+  { id:'r15',      name:'Yamaha R15M',       icon:'🔵', cc:155,  rarity:'common', basePrice:85000,    estSell:200000,   baseHP:19,  era:1 },
+  { id:'ninja300', name:'Kawasaki Ninja 300', icon:'🟢', cc:296,  rarity:'common', basePrice:175000,   estSell:400000,   baseHP:39,  era:1 },
+  { id:'duke390',  name:'KTM Duke 390',       icon:'🟠', cc:373,  rarity:'common', basePrice:220000,   estSell:520000,   baseHP:44,  era:1 },
+  { id:'cbr650',   name:'Honda CBR 650R',     icon:'🔴', cc:649,  rarity:'rare',   basePrice:780000,   estSell:1800000,  baseHP:95,  era:2 },
+  { id:'s1000rr',  name:'BMW S1000 RR',       icon:'⚪', cc:999,  rarity:'rare',   basePrice:1900000,  estSell:4500000,  baseHP:210, era:2 },
+  { id:'panv4',    name:'Ducati Panigale V4',  icon:'🔴', cc:1103, rarity:'rare',   basePrice:2500000,  estSell:5800000,  baseHP:214, era:2 },
+  { id:'h2r',      name:'Kawasaki H2R',        icon:'🟢', cc:998,  rarity:'mythic', basePrice:5500000,  estSell:14000000, baseHP:310, era:3 },
+  { id:'batcru',   name:'Batcruiser X9',       icon:'🖤', cc:1200, rarity:'mythic', basePrice:8000000,  estSell:22000000, baseHP:420, era:3 },
+  { id:'proto1',   name:'Aevith Phantom-1',    icon:'🔷', cc:1400, rarity:'mythic', basePrice:0,        estSell:60000000, baseHP:600, era:4 },
+];
+
+const SKILLS = [
+  { id:'scout',     name:'Scout Network',   desc:'Unlock rare auction slots', cost:50000,   icon:'🔭', req:0  },
+  { id:'restore',   name:'Master Restorer', desc:'+25% all sell prices',      cost:150000,  icon:'🔧', req:3  },
+  { id:'ecu_pro',   name:'ECU Pro',         desc:'ECU boosts HP by 2×',       cost:350000,  icon:'💻', req:5  },
+  { id:'showroom',  name:'Laser Showroom',  desc:'+30% vibe score',           cost:600000,  icon:'💡', req:8  },
+  { id:'prototype', name:'Prototype Lab',   desc:'Unlock Aevith Phantom-1',   cost:6000000, icon:'⚗️',  req:15 },
+];
+
+const VIBES = [
+  { id:'floor_bare',   name:'Bare',    icon:'⬜', cat:'floor', bonus:0  },
+  { id:'floor_epoxy',  name:'Epoxy',   icon:'🔷', cat:'floor', bonus:10 },
+  { id:'floor_carbon', name:'Carbon',  icon:'⬛', cat:'floor', bonus:20 },
+  { id:'light_day',    name:'Day',     icon:'☀️', cat:'light', bonus:0  },
+  { id:'light_neon',   name:'Neon',    icon:'💜', cat:'light', bonus:15 },
+  { id:'light_laser',  name:'Laser',   icon:'🔦', cat:'light', bonus:30 },
+  { id:'music_off',    name:'Silence', icon:'🔇', cat:'music', bonus:0  },
+  { id:'music_lofi',   name:'Lo-Fi',   icon:'🎵', cat:'music', bonus:8  },
+  { id:'music_phonk',  name:'Phonk',   icon:'🔊', cat:'music', bonus:25, isPhonk:true },
+];
+
+const BUYERS = [
+  { name:'Collector Raj',     mult:1.00 },
+  { name:'Dealer Priya',      mult:1.10 },
+  { name:'Influencer Zeke',   mult:1.28 },
+  { name:'Track Racer Anil',  mult:1.45 },
+  { name:'Sheikh Hassan',     mult:1.85 },
+];
+
+// ── STATE ─────────────────────────────────────────────────────
+let state = {
+  money:  60000,
+  rep:    0,
+  xp:     0,
+  level:  1,
+  garage: [],
+  activeSlot: -1,
+  skills: [],
+  vibes:  { floor:'floor_bare', light:'light_day', music:'music_off' },
+  salesLog: [],
+  hallUnlocked: [],
+  auctions: [],
+  dailyClaimed: false,
+  onboarded: false,
+};
+
+// ════════════════════════════════════════════════════════════
+//  THREE.JS — ENHANCED WITH ENV MAP + EMISSION ANIMATION
+// ════════════════════════════════════════════════════════════
+let scene, camera, renderer, bikeGroup;
+let rotY = 0, autoRotate = true, wireOn = false;
+let accentMaterials = [];          // tracked for beat-sync emission
+const BASE_EMISSION = 0.35;        // resting emission intensity
+
+// ── Procedural CubeCamera env map (dark city reflections) ──
+let envMap = null;
+
+function buildEnvCubeMap() {
+  // Generate a minimal dark-garage environment texture procedurally
+  // using a CubeCamera with a simple scene so we don't need external images
+  const pmremGen = new THREE.PMREMGenerator(renderer);
+  pmremGen.compileEquirectangularShader();
+
+  // Build a tiny env scene: dark background + 4 coloured point lights
+  const envScene = new THREE.Scene();
+  envScene.background = new THREE.Color(0x000810);
+
+  const addEnvLight = (hex, x, y, z, intensity) => {
+    const l = new THREE.PointLight(hex, intensity, 12);
+    l.position.set(x, y, z);
+    envScene.add(l);
+  };
+  addEnvLight(0x00e5ff, 3, 2, 0, 2);    // cyan left
+  addEnvLight(0x00e5ff, -3, 2, 0, 1.5); // cyan right
+  addEnvLight(0xffab00, 0, -1, 4, 1.2); // amber front
+  addEnvLight(0xff1744, 0, 3, -4, 0.8); // red rim
+
+  // Floating sphere grid gives "city lights" feel in reflections
+  const sphereGeo = new THREE.SphereGeometry(0.08, 4, 4);
+  for (let i = 0; i < 30; i++) {
+    const hex  = [0x00e5ff, 0xffab00, 0xff1744, 0x00e676][i % 4];
+    const mat  = new THREE.MeshBasicMaterial({ color: hex });
+    const mesh = new THREE.Mesh(sphereGeo, mat);
+    mesh.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 10);
+    envScene.add(mesh);
+  }
+
+  const renderTarget = pmremGen.fromScene(new THREE.RoomEnvironment(), 0.04);
+  // Overlay our custom scene on top by rendering to a cube render target
+  const cubeRT = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+  const cubeCamera = new THREE.CubeCamera(0.1, 20, cubeRT);
+  envScene.add(cubeCamera);
+  cubeCamera.update(renderer, envScene);
+
+  envMap = cubeRT.texture;
+  scene.environment = envMap;
+  pmremGen.dispose();
+}
+
+function initThree() {
+  const canvas = document.getElementById('three-canvas');
+  const wrap   = document.getElementById('viewport-wrap');
+  scene    = new THREE.Scene();
+  camera   = new THREE.PerspectiveCamera(52, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
+  camera.position.set(0, 1.1, 4.2);
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  renderer.physicallyCorrectLights = true;
+
+  const amb  = new THREE.AmbientLight(0x112233, 2.5);
+  const key  = new THREE.DirectionalLight(0x00e5ff, 3.5);
+  const fill = new THREE.DirectionalLight(0xffab00, 1.2);
+  const rim  = new THREE.DirectionalLight(0x00e5ff, 2.5);
+  key.position.set(4, 6, 4);
+  fill.position.set(-4, 2, -2);
+  rim.position.set(0, -1, -5);
+  scene.add(amb, key, fill, rim);
+
+  const grid = new THREE.GridHelper(12, 24, 0x00e5ff, 0x061824);
+  grid.position.y = -0.85;
+  scene.add(grid);
+
+  // Build env map FIRST so materials can use it
+  buildEnvCubeMap();
+  buildBikeModel();
+  initVisualizer();
+
+  (function loop() {
+    requestAnimationFrame(loop);
+    const t = Date.now() * 0.001;
+
+    if (autoRotate) rotY += 0.0025;
+    if (bikeGroup) bikeGroup.rotation.y = rotY;
+
+    // ── EMISSION BREATHING ANIMATION ──────────────────────
+    // Smoothly breathe between BASE_EMISSION and BASE_EMISSION+0.3
+    // If phonk is on, the beat callback overrides this momentarily
+    if (accentMaterials.length) {
+      const breathe = BASE_EMISSION + Math.sin(t * 1.8) * 0.14 + Math.sin(t * 3.1) * 0.05;
+      accentMaterials.forEach(m => {
+        // Only apply breath if not currently on a beat spike
+        if (m.emissiveIntensity <= BASE_EMISSION + 0.5) {
+          m.emissiveIntensity += (breathe - m.emissiveIntensity) * 0.08;
+        }
+      });
+    }
+
+    // Update phonk visualizer bars
+    if (phonkEnabled) updateVisualizer();
+
+    renderer.render(scene, camera);
+  })();
+
+  // ── ResizeObserver: keeps renderer pixel-perfect on all CrazyGames
+  // test resolutions (e.g. 907×510, 800×450) ──────────────────────
+  const resizeObserver = new ResizeObserver(() => {
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+  resizeObserver.observe(wrap);
+
+  // Fallback for browsers without ResizeObserver
+  window.addEventListener('resize', () => {
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+
+  let dragging = false, lastX = 0;
+  canvas.addEventListener('mousedown',  e => { dragging = true; lastX = e.clientX; autoRotate = false; });
+  canvas.addEventListener('mousemove',  e => { if (dragging) { rotY += (e.clientX - lastX) * 0.009; lastX = e.clientX; } });
+  canvas.addEventListener('mouseup',    () => dragging = false);
+  canvas.addEventListener('mouseleave', () => dragging = false);
+  canvas.addEventListener('touchstart', e => { lastX = e.touches[0].clientX; autoRotate = false; }, { passive: true });
+  canvas.addEventListener('touchmove',  e => { rotY += (e.touches[0].clientX - lastX) * 0.009; lastX = e.touches[0].clientX; }, { passive: true });
+  canvas.addEventListener('touchend',   () => setTimeout(() => autoRotate = true, 4000));
+}
+
+function buildBikeModel() {
+  if (bikeGroup) scene.remove(bikeGroup);
+  bikeGroup = new THREE.Group();
+  accentMaterials = [];
+
+  const slot  = state.activeSlot >= 0 ? state.garage[state.activeSlot] : null;
+  const bData = slot ? BIKES.find(b => b.id === slot.bikeId) : null;
+
+  const isMythic = bData && bData.rarity === 'mythic';
+  const isRare   = bData && bData.rarity === 'rare';
+  const bodyHex  = isMythic ? 0x000a1a : isRare ? 0x1a0005 : 0x001408;
+  const accHex   = isMythic ? 0xffab00 : 0x00e5ff;
+
+  // ── MATERIALS WITH ENV MAP ──────────────────────────────
+  const bodyMat = new THREE.MeshPhysicalMaterial({
+    color: bodyHex,
+    metalness: 0.94, roughness: 0.08,
+    clearcoat: 1, clearcoatRoughness: 0.05,
+    envMap: envMap, envMapIntensity: 1.4,
+    reflectivity: 1.0,
+  });
+
+  const accentMat = new THREE.MeshPhysicalMaterial({
+    color: accHex,
+    metalness: 1, roughness: 0.03,
+    emissive: new THREE.Color(accHex),
+    emissiveIntensity: BASE_EMISSION,
+    envMap: envMap, envMapIntensity: 1.8,
+    clearcoat: 1,
+  });
+  accentMaterials.push(accentMat);
+
+  // Extra accent for brake discs (slightly different hue)
+  const accentMat2 = new THREE.MeshPhysicalMaterial({
+    color: accHex,
+    metalness: 0.9, roughness: 0.05,
+    emissive: new THREE.Color(accHex),
+    emissiveIntensity: BASE_EMISSION * 0.7,
+    envMap: envMap, envMapIntensity: 1.2,
+  });
+  accentMaterials.push(accentMat2);
+
+  const chromeMat = new THREE.MeshPhysicalMaterial({
+    color: 0xcccccc,
+    metalness: 1, roughness: 0.04,
+    envMap: envMap, envMapIntensity: 2.0,
+    reflectivity: 1.0,
+  });
+
+  const tireMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0f0f0f, roughness: 0.9, metalness: 0,
+  });
+
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: accHex, transparent: true, opacity: 0.22,
+    metalness: 0.5, roughness: 0.0,
+    envMap: envMap, envMapIntensity: 1.5,
+    clearcoat: 1,
+  });
+
+  const seatMat = new THREE.MeshPhysicalMaterial({
+    color: 0x111111, roughness: 0.85, metalness: 0,
+  });
+
+  // ── GEOMETRY (same as original, enhanced materials) ─────
+  const bodyGeo = new THREE.CapsuleGeometry(.36, .95, 8, 16);
+  bodyGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+  bikeGroup.add(new THREE.Mesh(bodyGeo, bodyMat)).position.set(0, .28, 0);
+
+  const noseGeo = new THREE.SphereGeometry(.21, 12, 8, 0, Math.PI * 2, 0, Math.PI * .5);
+  const nose = new THREE.Mesh(noseGeo, bodyMat);
+  nose.position.set(.63, .42, 0); nose.rotation.z = -Math.PI / 2.4;
+  bikeGroup.add(nose);
+
+  const tankGeo = new THREE.CapsuleGeometry(.18, .32, 6, 12);
+  tankGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+  const tank = new THREE.Mesh(tankGeo, bodyMat);
+  tank.position.set(.08, .6, 0); tank.scale.set(1, .72, .82);
+  bikeGroup.add(tank);
+
+  const seatGeo = new THREE.CapsuleGeometry(.11, .34, 6, 8);
+  seatGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+  const seat = new THREE.Mesh(seatGeo, seatMat);
+  seat.position.set(-.2, .6, 0); seat.scale.set(1, .52, .68);
+  bikeGroup.add(seat);
+
+  const barGeo = new THREE.CylinderGeometry(.016, .016, .5, 8);
+  const bar = new THREE.Mesh(barGeo, chromeMat);
+  bar.rotation.z = Math.PI / 2; bar.position.set(.3, .7, 0);
+  bikeGroup.add(bar);
+
+  const wsGeo = new THREE.PlaneGeometry(.28, .18);
+  const ws = new THREE.Mesh(wsGeo, glassMat);
+  ws.position.set(.68, .68, 0); ws.rotation.z = .38;
+  bikeGroup.add(ws);
+
+  // Headlight — accent material (will breathe with emission)
+  const hlGeo = new THREE.CircleGeometry(.085, 16);
+  const hlMat = new THREE.MeshBasicMaterial({ color: accHex });
+  const hl = new THREE.Mesh(hlGeo, hlMat);
+  hl.position.set(.83, .5, 0);
+  bikeGroup.add(hl);
+
+  // Headlight halo — emissive plane
+  const haloGeo = new THREE.PlaneGeometry(.22, .22);
+  const haloMat = new THREE.MeshBasicMaterial({ color: accHex, transparent: true, opacity: 0.12 });
+  const halo = new THREE.Mesh(haloGeo, haloMat);
+  halo.position.set(.84, .5, 0);
+  bikeGroup.add(halo);
+
+  // Wheels
+  [-0.72, 0.72].forEach((xPos) => {
+    const wGeo = new THREE.TorusGeometry(.3, .082, 12, 30);
+    bikeGroup.add(new THREE.Mesh(wGeo, tireMat)).position.set(xPos, -.28, 0).constructor; // chain trick: just add then position
+    const w = bikeGroup.children[bikeGroup.children.length - 1];
+    w.position.set(xPos, -.28, 0); w.rotation.y = Math.PI / 2;
+
+    const rimGeo = new THREE.TorusGeometry(.2, .02, 8, 24);
+    const rimMesh = new THREE.Mesh(rimGeo, accentMat2);
+    rimMesh.position.set(xPos, -.28, 0); rimMesh.rotation.y = Math.PI / 2;
+    bikeGroup.add(rimMesh);
+
+    for (let s = 0; s < 6; s++) {
+      const spkGeo = new THREE.CylinderGeometry(.01, .01, .3, 4);
+      const spk = new THREE.Mesh(spkGeo, chromeMat);
+      spk.position.set(xPos, -.28, 0);
+      spk.rotation.x = (s / 6) * Math.PI;
+      spk.rotation.y = Math.PI / 2;
+      bikeGroup.add(spk);
+    }
+  });
+
+  // Proper wheel (torus must be placed correctly)
+  // Front fork
+  [-.11, .11].forEach(z => {
+    const fGeo = new THREE.CylinderGeometry(.028, .022, .62, 8);
+    const f = new THREE.Mesh(fGeo, chromeMat);
+    f.position.set(.46, -.06, z); f.rotation.z = -.36;
+    bikeGroup.add(f);
+  });
+
+  // Exhausts
+  [-1, 1].forEach(s => {
+    const eGeo = new THREE.CylinderGeometry(.038, .052, .65, 10);
+    const e = new THREE.Mesh(eGeo, chromeMat);
+    e.position.set(-.52, -.12, s * .17); e.rotation.z = Math.PI / 4;
+    bikeGroup.add(e);
+    const tGeo = new THREE.CircleGeometry(.038, 10);
+    const tMat = new THREE.MeshBasicMaterial({ color: slot && slot.firstStartDone ? 0xff4400 : 0x222222 });
+    const t = new THREE.Mesh(tGeo, tMat);
+    t.position.set(-.82, .12 + s * .01, s * .17); t.rotation.z = -Math.PI / 4;
+    bikeGroup.add(t);
+  });
+
+  // Brake discs — accent emissive
+  [-0.72, 0.72].forEach(x => {
+    const dGeo = new THREE.TorusGeometry(.18, .008, 4, 24);
+    const d = new THREE.Mesh(dGeo, accentMat2);
+    d.position.set(x, -.28, .03); d.rotation.y = Math.PI / 2;
+    bikeGroup.add(d);
+  });
+
+  // Damage dust overlay
+  if (slot && slot.condition < 50) {
+    const dustGeo = new THREE.SphereGeometry(.6, 6, 6);
+    const dustMat = new THREE.MeshBasicMaterial({ color: 0x554433, wireframe: true, transparent: true, opacity: .06 });
+    const dust = new THREE.Mesh(dustGeo, dustMat);
+    dust.position.set(0, .2, 0);
+    bikeGroup.add(dust);
+  }
+
+  scene.add(bikeGroup);
+  updateHUDNodes();
+}
+
+function toggleWireframe() {
+  wireOn = !wireOn;
+  bikeGroup.traverse(o => { if (o.isMesh && o.material) o.material.wireframe = wireOn; });
+  floatText(wireOn ? '⬡ X-RAY ON' : '⬡ NORMAL VIEW', wireOn ? 'var(--cyan)' : 'var(--text2)');
+}
+
+function rotateView(dir) {
+  rotY += dir * 0.45;
+  autoRotate = false;
+  setTimeout(() => autoRotate = true, 3500);
+}
+
+function toggleGarageMode() {
+  scene.children.filter(c => c instanceof THREE.DirectionalLight).forEach(l => {
+    l.intensity = l.intensity > 2 ? 0.8 : 3.8;
+  });
+  floatText('HANGAR MODE', 'var(--cyan)');
+}
+
+function updateHUDNodes() {
+  const hub = document.getElementById('center-hud');
+  hub.innerHTML = '';
+  if (state.activeSlot < 0) return;
+  const slot = state.garage[state.activeSlot];
+  if (!slot) return;
+  const bd = BIKES.find(b => b.id === slot.bikeId);
+  const nodes = [
+    { label:'ENGINE CORE',   sub: (slot.dynhp || bd.baseHP) + ' HP',  x:'66%', y:'22%' },
+    { label:'ECU TUNING',    sub:'Level ' + slot.ecu + '%',             x:'70%', y:'52%' },
+    { label:'AERO FAIRINGS', sub:'Drag -' + slot.aero + '%',            x:'14%', y:'28%' },
+    { label:'EXHAUST',       sub:slot.condition + '% cond.',            x:'10%', y:'60%' },
+  ];
+  nodes.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'hud-node';
+    el.style.cssText = `left:${n.x};top:${n.y}`;
+    el.innerHTML = `<div class="hud-node-dot"></div><div class="hud-node-label">${n.label}<br><span style="color:var(--amber)">${n.sub}</span></div>`;
+    hub.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════════
+function renderAll() {
+  renderHUD();
+  renderGarageSlots();
+  renderModulePanel();
+  renderAuctions();
+  renderVibeGrid();
+  renderSalesLog();
+  renderHallOfFame();
+  renderSkillTree();
+}
+
+function renderHUD() {
+  document.getElementById('hud-money').textContent = '₹' + Math.floor(state.money).toLocaleString('en-IN');
+  document.getElementById('hud-rep').textContent   = state.rep;
+  document.getElementById('hud-level').textContent = state.level;
+  const xpNeeded = state.level * 1000;
+  document.getElementById('hud-xp-bar').style.width = Math.min(100, (state.xp % xpNeeded) / xpNeeded * 100) + '%';
+  document.getElementById('hud-vibe').textContent = calcVibe() + '%';
+  const slot = state.activeSlot >= 0 ? state.garage[state.activeSlot] : null;
+  const showFS = slot && !slot.firstStartDone && slot.condition >= 55;
+  ['btn-first-start', 'btn-first-start-l'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = showFS ? 'flex' : 'none';
+  });
+}
+
+function renderGarageSlots() {
+  const el = document.getElementById('garage-slots');
+  el.innerHTML = '';
+  if (!state.garage.length) {
+    el.innerHTML = '<div style="font-size:.58rem;color:var(--text3);font-family:var(--ff-mono);text-align:center;padding:.5rem 0">GARAGE EMPTY — BUY A BIKE</div>';
+    return;
+  }
+  state.garage.forEach((slot, i) => {
+    const bd = BIKES.find(b => b.id === slot.bikeId);
+    if (!bd) return;
+    const cc = slot.condition > 70 ? 'var(--green)' : slot.condition > 40 ? 'var(--amber)' : 'var(--red)';
+    const div = document.createElement('div');
+    div.className = 'slot' + (i === state.activeSlot ? ' active' : '');
+    div.onclick = () => selectSlot(i);
+    div.innerHTML = `<div class="slot-icon">${bd.icon}</div><div class="slot-info"><div class="slot-name">${bd.name}</div><div class="slot-sub">${bd.cc}cc · ${bd.rarity.toUpperCase()}</div><div class="slot-cond"><div class="slot-cond-fill" style="width:${slot.condition}%;background:${cc}"></div></div></div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderModulePanel() {
+  const slot = state.activeSlot >= 0 ? state.garage[state.activeSlot] : null;
+  [['engine', slot?.engine || 0], ['aero', slot?.aero || 0], ['ecu', slot?.ecu || 0]].forEach(([m, v]) => {
+    const inp = document.getElementById('mod-' + m);
+    if (inp) inp.value = v;
+    const fill = document.getElementById('mod-' + m + '-fill');
+    if (fill) fill.style.width = v + '%';
+    const lbl = document.getElementById('mod-' + m + '-val');
+    if (lbl) lbl.textContent = v;
+  });
+  const cond = slot?.condition || 0;
+  const cc = cond > 70 ? 'var(--green)' : cond > 40 ? 'var(--amber)' : 'var(--red)';
+  const cf = document.getElementById('cond-fill');
+  if (cf) { cf.style.width = cond + '%'; cf.style.background = cc; }
+  const cp = document.getElementById('cond-pct');
+  if (cp) cp.textContent = cond + '%';
+}
+
+function renderAuctions() {
+  const el = document.getElementById('auction-list');
+  el.innerHTML = '';
+  if (!state.auctions.length) {
+    el.innerHTML = '<div style="font-size:.58rem;color:var(--text3);font-family:var(--ff-mono);text-align:center;padding:1rem">NO LIVE AUCTIONS</div>';
+    return;
+  }
+  state.auctions.forEach((a, i) => {
+    const bd = BIKES.find(b => b.id === a.bikeId);
+    if (!bd) return;
+    const div = document.createElement('div');
+    div.className = 'auction-card' + (bd.rarity === 'mythic' ? ' mythic' : '');
+    div.onclick = () => openAuctionDetail(i);
+    div.innerHTML = `<div class="ac-header"><span class="ac-name">${bd.icon} ${bd.name}</span><span class="ac-badge ${bd.rarity}">${bd.rarity.toUpperCase()}</span></div><div class="ac-price">₹${a.price.toLocaleString('en-IN')}</div><div class="ac-stats"><span class="ac-stat">COND: ${a.condition}%</span><span class="ac-stat">· ${bd.cc}cc</span><span class="ac-stat">· EST ₹${Math.floor(bd.estSell / 100000)}L+</span></div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderVibeGrid() {
+  const el = document.getElementById('vibe-grid');
+  el.innerHTML = '';
+  VIBES.forEach(v => {
+    const active = Object.values(state.vibes).includes(v.id);
+    const div = document.createElement('div');
+    div.className = 'vibe-opt' + (active ? ' active' : '') + (active && v.isPhonk ? ' phonk-vibe' : '');
+    div.onclick = () => setVibe(v);
+    div.innerHTML = `<span class="vo-icon">${v.icon}</span>${v.name}`;
+    el.appendChild(div);
+  });
+}
+
+function renderSalesLog() {
+  const el = document.getElementById('sales-log');
+  el.innerHTML = '';
+  const list = [...state.salesLog].reverse().slice(0, 8);
+  if (!list.length) { el.innerHTML = '<div style="font-size:.58rem;color:var(--text3);font-family:var(--ff-mono)">NO SALES YET</div>'; return; }
+  list.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'sale-entry';
+    d.innerHTML = `<span class="se-name">${s.name}</span><span class="se-price">+₹${Math.floor(s.price).toLocaleString('en-IN')}</span>`;
+    el.appendChild(d);
+  });
+}
+
+function renderHallOfFame() {
+  const el = document.getElementById('hall-wrap');
+  el.innerHTML = '';
+  BIKES.forEach(b => {
+    const unlocked = state.hallUnlocked.includes(b.id);
+    const d = document.createElement('div');
+    d.className = 'hof-slot ' + (unlocked ? 'unlocked' : 'locked');
+    d.innerHTML = `<div class="hof-icon">${b.icon}</div><div class="hof-name">${unlocked ? b.name.split(' ')[0] : '???'}</div>`;
+    el.appendChild(d);
+  });
+}
+
+function renderSkillTree() {
+  const el = document.getElementById('skill-tree');
+  el.innerHTML = '<div class="p-section-title" style="margin-bottom:.4rem">Tech Tree</div>';
+  SKILLS.forEach(sk => {
+    const owned  = state.skills.includes(sk.id);
+    const locked = state.level < sk.req;
+    const d = document.createElement('div');
+    d.className = 'skill-node' + (owned ? ' unlocked' : locked ? ' locked' : '');
+    d.onclick = () => !owned && !locked && buySkill(sk);
+    d.innerHTML = `<span class="skill-icon">${sk.icon}</span><div class="skill-text"><div class="skill-name">${sk.name}</div><div class="skill-desc">${sk.desc}</div></div><span class="skill-cost">${owned ? '✓ OWNED' : locked ? 'LV' + sk.req + ' REQ' : '₹' + (sk.cost / 1000).toFixed(0) + 'K'}</span>`;
+    el.appendChild(d);
+  });
+}
+
+// ── SLOT SELECTION ──────────────────────────────────────────
+function selectSlot(i) {
+  state.activeSlot = i;
+  buildBikeModel();
+  renderAll();
+  saveGame();
+}
+
+// ── AUCTIONS ────────────────────────────────────────────────
+let currentAuctionIdx = -1;
+
+function generateAuctions() {
+  const maxEra = Math.min(Math.ceil(state.level / 5) + 1, 4);
+  const pool = BIKES.filter(b => b.era <= maxEra && !(b.id === 'proto1' && !state.skills.includes('prototype')));
+  state.auctions = [];
+  for (let i = 0; i < 6; i++) {
+    const bd = pool[Math.floor(Math.random() * pool.length)];
+    const cond  = 10 + Math.floor(Math.random() * 55);
+    const price = Math.floor(bd.basePrice * (.55 + Math.random() * .45));
+    state.auctions.push({ bikeId: bd.id, condition: cond, price });
+  }
+}
+
+function openAuction() {
+  if (!state.auctions.length) generateAuctions();
+  renderAuctions();
+  floatText('AUCTION FEED LIVE', 'var(--cyan)');
+}
+
+function openAuctionDetail(i) {
+  currentAuctionIdx = i;
+  const a  = state.auctions[i];
+  const bd = BIKES.find(b => b.id === a.bikeId);
+  document.getElementById('ma-title').textContent  = bd.icon + ' ' + bd.name;
+  document.getElementById('ma-sub').textContent    = bd.cc + 'cc — Lot #' + (1000 + i * 7);
+  document.getElementById('ma-price').textContent  = '₹' + a.price.toLocaleString('en-IN');
+  document.getElementById('ma-cond').textContent   = a.condition + '% — restoration needed';
+  document.getElementById('ma-engine').textContent = bd.baseHP + ' HP stock';
+  document.getElementById('ma-sell').textContent   = '₹' + bd.estSell.toLocaleString('en-IN') + '+';
+  document.getElementById('ma-rarity').textContent = bd.rarity.toUpperCase();
+  document.getElementById('ma-rarity').style.color = bd.rarity === 'mythic' ? 'var(--amber)' : bd.rarity === 'rare' ? 'var(--cyan)' : 'var(--text2)';
+  const btn = document.getElementById('ma-buy-btn');
+  btn.disabled = state.money < a.price;
+  btn.textContent = state.money >= a.price ? 'BUY FRAME — ₹' + a.price.toLocaleString('en-IN') : 'INSUFFICIENT CAPITAL';
+  openModal('modal-auction');
+  obTrigger('auctionDetail');
+
+function confirmBuy() {
+  const a = state.auctions[currentAuctionIdx];
+  if (!a || state.money < a.price) return;
+  state.money -= a.price;
+  state.garage.push({ bikeId: a.bikeId, condition: a.condition, engine: 0, aero: 0, ecu: 0, dynhp: 0, firstStartDone: false });
+  state.auctions.splice(currentAuctionIdx, 1);
+  state.activeSlot = state.garage.length - 1;
+  if (!state.hallUnlocked.includes(a.bikeId)) state.hallUnlocked.push(a.bikeId);
+  gainXP(200);
+  floatText('FRAME ACQUIRED!', 'var(--cyan)');
+  closeModal('modal-auction');
+  buildBikeModel();
+  renderAll();
+  saveGame();
+  obTrigger('confirmBuy');
+  // Trigger a midgame ad every N purchases (CrazyGames requirement)
+  requestMidgameAd();
+}
+
+function openDailyAuction() {
+  if (state.dailyClaimed) { floatText('DAILY CLAIMED — COME BACK TOMORROW', 'var(--text3)'); return; }
+  const mythics = BIKES.filter(b => b.rarity === 'mythic');
+  const pick    = mythics[Math.floor(Math.random() * mythics.length)];
+  state.auctions.unshift({ bikeId: pick.id, condition: 85, price: Math.floor(pick.basePrice * .8), isDaily: true });
+  renderAuctions();
+  floatText('⚡ DAILY MYTHIC APPEARED!', 'var(--amber)');
+}
+
+// ── MODULES ─────────────────────────────────────────────────
+function updateModule(mod, rawVal) {
+  const slot = state.garage[state.activeSlot];
+  if (!slot) { floatText('SELECT A BIKE FIRST', 'var(--red)'); return; }
+  const newVal = parseInt(rawVal);
+  const oldVal = mod === 'engine' ? slot.engine : mod === 'aero' ? slot.aero : slot.ecu;
+  const diff   = newVal - oldVal;
+  if (diff <= 0) return;
+  const bd      = BIKES.find(b => b.id === slot.bikeId);
+  const costPt  = Math.max(200, Math.floor(bd.basePrice * .004));
+  const cost    = diff * costPt;
+  if (state.money < cost) {
+    const inp = document.getElementById('mod-' + mod);
+    if (inp) inp.value = oldVal;
+    document.getElementById('mod-' + mod + '-fill').style.width = oldVal + '%';
+    floatText('NEED ₹' + cost.toLocaleString('en-IN'), 'var(--red)');
+    return;
+  }
+  state.money -= cost;
+  if (mod === 'engine') slot.engine = newVal;
+  if (mod === 'aero')   slot.aero   = newVal;
+  if (mod === 'ecu')    slot.ecu    = newVal;
+  document.getElementById('mod-' + mod + '-fill').style.width = newVal + '%';
+  document.getElementById('mod-' + mod + '-val').textContent  = newVal;
+  floatText('-₹' + cost.toLocaleString('en-IN'), 'var(--amber)');
+  gainXP(10);
+  obTrigger('moduleUpgrade');
+  updateHUDNodes();
+  renderHUD();
+  saveGame();
+}
+
+function repairBike(amount) {
+  const slot = state.garage[state.activeSlot];
+  if (!slot) { floatText('NO BIKE SELECTED', 'var(--red)'); return; }
+  if (slot.condition >= 100) { floatText('ALREADY PERFECT', 'var(--green)'); return; }
+  const bd   = BIKES.find(b => b.id === slot.bikeId);
+  const cost = Math.max(1000, Math.floor(bd.basePrice * .018 * (amount / 10)));
+  if (state.money < cost) { floatText('NEED ₹' + cost.toLocaleString('en-IN'), 'var(--red)'); return; }
+  state.money  -= cost;
+  slot.condition = Math.min(100, slot.condition + amount);
+  floatText('+' + amount + '% CONDITION', 'var(--green)');
+  gainXP(40);
+  buildBikeModel();
+  renderAll();
+  saveGame();
+}
+
+// ── VIBE ────────────────────────────────────────────────────
+function calcVibe() {
+  let v = 0;
+  VIBES.forEach(vi => { if (Object.values(state.vibes).includes(vi.id)) v += vi.bonus; });
+  if (state.skills.includes('showroom')) v = Math.floor(v * 1.3);
+  return Math.min(100, v);
+}
+
+function setVibe(v) {
+  state.vibes[v.cat] = v.id;
+  // Auto-start phonk when Phonk music is selected
+  if (v.isPhonk && !AudioMgr.isPlaying()) {
+    phonkEnabled = true;
+    AudioMgr.play();
+    const btn = document.getElementById('phonk-toggle-btn');
+    btn.textContent = '🎵 PHONK ON';
+    btn.classList.add('phonk-active');
+    floatText('🔊 PHONK ENGAGED FROM VIBE!', 'var(--amber)');
+  } else if (v.cat === 'music' && !v.isPhonk && AudioMgr.isPlaying()) {
+    phonkEnabled = false;
+    AudioMgr.stop();
+    const btn = document.getElementById('phonk-toggle-btn');
+    btn.textContent = '🎵 PHONK OFF';
+    btn.classList.remove('phonk-active');
+  }
+  renderVibeGrid();
+  renderHUD();
+  floatText('VIBE: ' + calcVibe() + '%', 'var(--cyan)');
+  saveGame();
+}
+
+// ── PRIVATE VIEWING ─────────────────────────────────────────
+function calcBikeScore(slot) {
+  return Math.min(100, Math.floor((slot.condition + slot.engine + slot.aero + slot.ecu) / 4));
+}
+
+function openPrivateViewing() {
+  const slot = state.garage[state.activeSlot];
+  if (!slot) { floatText('SELECT A BIKE FIRST', 'var(--red)'); return; }
+  const bd      = BIKES.find(b => b.id === slot.bikeId);
+  const score   = calcBikeScore(slot);
+  const vibe    = calcVibe();
+  const base    = bd.estSell * (score / 100);
+  const vibeAdd = base * (vibe / 100) * .5;
+  const skillM  = state.skills.includes('restore') ? 1.25 : 1;
+  const hpM     = slot.dynhp ? 1 + (slot.dynhp / bd.baseHP - 1) * .3 : 1;
+  let best = 0;
+  const buyersEl = document.getElementById('pv-buyers');
+  buyersEl.innerHTML = '';
+  BUYERS.forEach(b => {
+    const bid = Math.floor((base + vibeAdd) * b.mult * skillM * hpM);
+    best = Math.max(best, bid);
+    const p = document.createElement('div');
+    p.style.cssText = 'padding:.18rem .38rem;border:1px solid rgba(0,229,255,.12);border-radius:3px;font-size:.54rem;font-family:var(--ff-mono);color:var(--text2)';
+    p.textContent = b.name + ' · ₹' + Math.floor(bid / 1000) + 'K';
+    buyersEl.appendChild(p);
+  });
+  document.getElementById('pv-bike').textContent  = bd.name;
+  document.getElementById('pv-score').textContent = score + '/100';
+  document.getElementById('pv-vibe').textContent  = '+₹' + Math.floor(vibeAdd / 1000) + 'K';
+  document.getElementById('pv-hp').textContent    = (slot.dynhp || bd.baseHP) + ' HP';
+  document.getElementById('pv-bid').textContent   = '₹' + best.toLocaleString('en-IN');
+  document.getElementById('pv-sub').textContent   = 'Collectors watching · Vibe ' + vibe + '% · Score ' + score + '/100';
+  window._pendingBid = { slot: state.activeSlot, price: best, bikeName: bd.name, bikeId: bd.id };
+  openModal('modal-viewing');
+}
+
+function acceptBid() {
+  const p = window._pendingBid;
+  if (!p) return;
+  state.money += p.price;
+  state.rep   += Math.max(1, Math.floor(p.price / 80000));
+  state.salesLog.push({ name: p.bikeName, price: p.price });
+  state.garage.splice(p.slot, 1);
+  state.activeSlot = state.garage.length > 0 ? state.garage.length - 1 : -1;
+  gainXP(500);
+  floatText('+₹' + Math.floor(p.price).toLocaleString('en-IN'), 'var(--green)');
+  closeModal('modal-viewing');
+  buildBikeModel();
+  renderAll();
+  saveGame();
+}
+
+function sellCurrentBike() {
+  if (state.activeSlot < 0) { floatText('NO BIKE SELECTED', 'var(--red)'); return; }
+  openPrivateViewing();
+}
+
+// ════════════════════════════════════════════════════════════
+//  DYNO MINIGAME — ENHANCED WITH 3 ZONES + STREAK
+// ════════════════════════════════════════════════════════════
+// Zone layout (% of bar width):
+//   Miss:     0–73%   → 55% HP gain
+//   Perfect:  74–88%  → 100% HP gain (+green visual)
+//   Critical: 80–85%  → 150% HP gain + CRITICAL BOOST flash
+
+const DYNO_ZONES = {
+  perfect:  { min: 74, max: 88,  mult: 1.00, label:'PERFECT SHIFT!',  color:'var(--green)' },
+  critical: { min: 80, max: 85,  mult: 1.50, label:'⚡ CRITICAL BOOST ×1.5!', color:'var(--amber)' },
+  miss:     { min: 0,  max: 100, mult: 0.55, label:'MISSED — POWER LOST',     color:'var(--red)'  },
+};
+
+let dynoState = {};
+let dynoStreak = 0; // consecutive perfect or critical hits
+
+function openDyno() {
+  const slot = state.garage[state.activeSlot];
+  if (!slot) { floatText('SELECT A BIKE FIRST', 'var(--red)'); return; }
+  const bd = BIKES.find(b => b.id === slot.bikeId);
+  const ecuMult = state.skills.includes('ecu_pro') ? 2 : 1;
+  dynoStreak = 0;
+  dynoState = {
+    gear: 0,
+    rpm: 0,
+    hp: 0,
+    maxHP: Math.floor((bd.baseHP + slot.engine / 100 * bd.baseHP * .6) * ecuMult),
+    active: true,
+    interval: null,
+    direction: 1,   // oscillate RPM for more skill
+    speed: 1.4,
+  };
+
+  // Build gear pips
+  const pipsEl = document.getElementById('gear-pips');
+  pipsEl.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'gear-pip';
+    p.id = 'gp-' + i;
+    p.textContent = i + 1;
+    pipsEl.appendChild(p);
+  }
+
+  document.getElementById('dyno-result').textContent = '';
+  document.getElementById('dyno-streak').textContent = '';
+  document.getElementById('rpm-fill').style.width = '0%';
+  document.getElementById('dyno-rpm-val').textContent = '0 RPM';
+  document.getElementById('dyno-hp').textContent = '0 HP';
+  document.getElementById('dyno-tap').className = 'dyno-tap-btn' + (phonkEnabled ? ' phonk-btn' : '');
+
+  // Oscillate RPM: it bounces back and forth, getting faster each gear
+  dynoState.interval = setInterval(() => {
+    if (!dynoState.active) return;
+    dynoState.rpm += dynoState.direction * dynoState.speed;
+    if (dynoState.rpm >= 100) { dynoState.rpm = 100; dynoState.direction = -1; }
+    if (dynoState.rpm <= 0)   { dynoState.rpm = 0;   dynoState.direction =  1; }
+    document.getElementById('rpm-fill').style.width = dynoState.rpm + '%';
+    document.getElementById('dyno-rpm-val').textContent = Math.floor(dynoState.rpm * 120) + ' RPM';
+  }, 45);
+
+  openModal('dyno-modal');
+}
+
+function endDyno() {
+  if (dynoState.interval) clearInterval(dynoState.interval);
+  dynoState.active = false;
+  dynoStreak = 0;
+}
+
+function dynoTap() {
+  if (!dynoState.active || dynoState.gear >= 6) return;
+
+  const rpm  = dynoState.rpm;
+  const base = dynoState.maxHP / 6;
+  const pip  = document.getElementById('gp-' + dynoState.gear);
+
+  // Detect zone (critical is inside perfect, check critical FIRST)
+  let zone, hpGain;
+  if (rpm >= DYNO_ZONES.critical.min && rpm <= DYNO_ZONES.critical.max) {
+    zone   = DYNO_ZONES.critical;
+    hpGain = Math.floor(base * zone.mult);
+    dynoStreak++;
+    if (pip) pip.className = 'gear-pip critical';
+    // Extra: flash accent materials in scene
+    accentMaterials.forEach(m => m.emissiveIntensity = 2.0);
+    setTimeout(() => accentMaterials.forEach(m => m.emissiveIntensity = BASE_EMISSION), 200);
+  } else if (rpm >= DYNO_ZONES.perfect.min && rpm <= DYNO_ZONES.perfect.max) {
+    zone   = DYNO_ZONES.perfect;
+    hpGain = Math.floor(base * zone.mult);
+    dynoStreak++;
+    if (pip) pip.className = 'gear-pip done';
+  } else {
+    zone   = DYNO_ZONES.miss;
+    hpGain = Math.floor(base * zone.mult);
+    dynoStreak = 0;
+    if (pip) { pip.className = 'gear-pip'; pip.style.borderColor = 'var(--red)'; pip.style.color = 'var(--red)'; }
+  }
+
+  dynoState.hp += hpGain;
+  dynoState.gear++;
+  // After each tap, reverse direction and slightly increase speed (escalating difficulty)
+  dynoState.direction *= -1;
+  dynoState.speed = Math.min(3.2, dynoState.speed + 0.18);
+  dynoState.rpm   = Math.abs(dynoState.rpm - 10); // jump slightly to make it harder
+
+  document.getElementById('dyno-hp').textContent = Math.round(dynoState.hp) + ' HP';
+  floatText(zone.label + (zone.mult >= 1.5 ? '' : (hpGain > 0 ? ' +' + hpGain + 'HP' : '')), zone.color);
+
+  // Streak message
+  const streakEl = document.getElementById('dyno-streak');
+  if (dynoStreak >= 2) {
+    streakEl.textContent = '🔥 ' + dynoStreak + 'x STREAK — +' + Math.floor((dynoStreak - 1) * 5) + '% BONUS';
+    streakEl.style.color = dynoStreak >= 4 ? 'var(--red)' : 'var(--amber)';
+  } else {
+    streakEl.textContent = '';
+  }
+
+  if (dynoState.gear >= 6) {
+    endDyno();
+
+    // Streak bonus: extra % HP for sustained perfect/critical runs
+    const streakBonus = Math.floor(dynoState.hp * (dynoStreak * 0.04));
+    const finalHP     = Math.round(dynoState.hp + streakBonus);
+
+    const slot = state.garage[state.activeSlot];
+    slot.dynhp = finalHP;
+    const pct  = Math.round(finalHP / dynoState.maxHP * 100);
+
+    let resultColor = pct >= 90 ? 'var(--amber)' : pct >= 75 ? 'var(--green)' : 'var(--cyan)';
+    document.getElementById('dyno-result').innerHTML =
+      `<span style="color:${resultColor}">COMPLETE · ${finalHP} HP · ${pct}% EFF` +
+      (streakBonus > 0 ? ` · STREAK BONUS +${streakBonus}HP` : '') +
+      ` · Sale value boosted!</span>`;
+
+    gainXP(100 + dynoStreak * 20);
+    updateHUDNodes();
+    renderAll();
+    saveGame();
+  }
+}
+
+// ── FIRST START ─────────────────────────────────────────────
+let startHeld = false, startInt = null, startProg = 0;
+
+function openFirstStart() {
+  const slot = state.garage[state.activeSlot];
+  if (!slot) { floatText('SELECT A BIKE', 'var(--red)'); return; }
+  startProg = 0;
+  document.getElementById('start-progress-fill').style.width = '0%';
+  document.getElementById('start-status').textContent = 'READY — HOLD TO START';
+  document.getElementById('exhaust-display').textContent = '🏍️';
+  document.getElementById('exhaust-display').style.fontSize = '2.8rem';
+  openModal('modal-firststart');
+}
+
+function startIgnition(e) {
+  if (e) e.preventDefault();
+  startHeld = true;
+  startInt  = setInterval(() => {
+    if (!startHeld) { clearInterval(startInt); return; }
+    startProg = Math.min(100, startProg + 2.2);
+    document.getElementById('start-progress-fill').style.width = startProg + '%';
+    const msgs = ['CRANKING ENGINE...', 'FUEL INJECTION...', 'ECU HANDSHAKE...', 'IGNITION SEQUENCE...', 'PHONK INCOMING...'];
+    document.getElementById('start-status').textContent = msgs[Math.floor(startProg / 20)] || 'FIRING UP...';
+    if (startProg >= 100) { clearInterval(startInt); completeFirstStart(); }
+  }, 60);
+}
+
+function stopIgnition() {
+  startHeld = false;
+  clearInterval(startInt);
+  if (startProg < 100) document.getElementById('start-status').textContent = 'HOLD LONGER — ' + Math.round(startProg) + '% READY';
+}
+
+function completeFirstStart() {
+  const slot = state.garage[state.activeSlot];
+  if (!slot) return;
+  slot.firstStartDone = true;
+  const frames = ['🔥', '💥', '⚡', '🔥💥', '⚡🔥💥'];
+  const qual   = calcBikeScore(slot);
+  const disp   = document.getElementById('exhaust-display');
+  let fi = 0;
+  const flash = setInterval(() => {
+    disp.textContent = frames[fi % frames.length];
+    disp.style.fontSize = (2.5 + Math.random() * 1.8) + 'rem';
+    fi++;
+    if (fi > 12) clearInterval(flash);
+  }, 120);
+  document.getElementById('start-status').textContent = 'ENGINE ALIVE · ' + qual + '/100 BUILD QUALITY';
+  slot.engine = Math.min(100, slot.engine + 5);
+
+  // Auto-start phonk on first start for dramatic effect
+  if (!AudioMgr.isPlaying()) {
+    phonkEnabled = true;
+    AudioMgr.play();
+    const btn = document.getElementById('phonk-toggle-btn');
+    btn.textContent = '🎵 PHONK ON';
+    btn.classList.add('phonk-active');
+  }
+
+  gainXP(300);
+  floatText('🔥 MACHINE IS ALIVE!', 'var(--amber)');
+  buildBikeModel();
+  setTimeout(() => closeModal('modal-firststart'), 2800);
+  renderAll();
+  saveGame();
+}
+
+// ── SKILLS ──────────────────────────────────────────────────
+function buySkill(sk) {
+  if (state.money < sk.cost || state.skills.includes(sk.id)) return;
+  state.money -= sk.cost;
+  state.skills.push(sk.id);
+  floatText(sk.name.toUpperCase() + ' UNLOCKED!', 'var(--green)');
+  gainXP(200);
+  if (sk.id === 'prototype') {
+    BIKES.find(b => b.id === 'proto1').era = 1;
+    floatText('PROTOTYPE LAB ONLINE!', 'var(--cyan)');
+  }
+  renderAll();
+  saveGame();
+}
+
+// ── XP / LEVEL ───────────────────────────────────────────────
+function gainXP(amt) {
+  state.xp += amt;
+  while (state.xp >= state.level * 1000) {
+    state.xp   -= state.level * 1000;
+    state.level++;
+    floatText('LEVEL UP → LV' + state.level, 'var(--cyan)');
+    if (state.level % 5 === 0) generateAuctions();
+  }
+  renderHUD();
+}
+
+// ── MODAL HELPERS ────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+});
+
+// ── FLOAT TEXT ───────────────────────────────────────────────
+function floatText(msg, color) {
+  const wrap = document.getElementById('viewport-wrap') || document.body;
+  const el   = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = msg;
+  el.style.color = color || 'var(--cyan)';
+  el.style.left  = (20 + Math.random() * 50) + '%';
+  el.style.top   = (25 + Math.random() * 35) + '%';
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 1550);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ONBOARDING SYSTEM
+// ════════════════════════════════════════════════════════════
+
+/* Tutorial steps — each describes WHAT to highlight and WHAT to say.
+   target: CSS selector of element to spotlight (null = no spotlight)
+   arrow:  which side the tooltip arrow appears on
+   pos:    'auto' = JS figures out coords, or {top,left} px overrides
+   action: optional function name string that auto-advances after the
+           player performs that game action (e.g. confirmBuy triggers step 2)
+*/
+const OB_STEPS = [
+  {
+    title: '⚡ YOUR GARAGE AWAITS',
+    body:  'Welcome, Mechanic. Your goal: buy wrecked superbikes cheap, restore them to glory, and sell for massive profit. Let\'s start with your first acquisition.',
+    target: '#panel-right',
+    arrow: 'left',
+    goal: '▼ LOOK RIGHT — LIVE AUCTION FEED',
+  },
+  {
+    title: '🏍️ PICK YOUR FIRST BIKE',
+    body:  'The Auction Feed is live on the right. Click any bike to see its details. You have ₹60,000 — enough for a Yamaha R15M or Kawasaki Ninja 300 frame.',
+    target: '#auction-list',
+    arrow: 'left',
+    goal: '▶ CLICK A BIKE IN THE AUCTION FEED',
+    waitFor: 'auctionDetail',
+  },
+  {
+    title: '💸 BUY THE FRAME',
+    body:  'Review the lot details. Frame Condition shows how much restoration work lies ahead. Hit BUY FRAME to lock it in — this is where your empire begins.',
+    target: '#modal-auction .modal-actions',
+    arrow: 'top',
+    goal: '▶ PRESS "BUY FRAME" TO ACQUIRE',
+    waitFor: 'confirmBuy',
+  },
+  {
+    title: '🔧 RESTORE IT',
+    body:  'Your bike lands in the Garage (left panel). Use the Engine, Aero and ECU sliders to invest in upgrades — each point raises its resale value.',
+    target: '#panel-left',
+    arrow: 'right',
+    goal: '⬆ DRAG A SLIDER TO UPGRADE',
+    waitFor: 'moduleUpgrade',
+  },
+  {
+    title: '💰 SELL FOR PROFIT',
+    body:  'When your build is ready, hit PRIVATE VIEW to attract collectors. The higher your Build Score + Vibe, the bigger the bid. Accept to cash out!',
+    target: '#viewport-actions',
+    arrow: 'top',
+    goal: '▶ OPEN PRIVATE VIEW & SELL',
+  },
+];
+
+let obStep   = 0;
+let obActive = false;
+
+// ── Entry point called by the intro CTA ─────────────────────
+function startOnboarding() {
+  // Hide intro, show game
+  document.getElementById('ob-intro').classList.add('hidden');
+  cgLoadingFinished();
+  bootGame();
+
+  // If already played before (save exists) skip tour
+  if (state.onboarded) {
+    document.getElementById('ob-goal').classList.remove('visible');
+    return;
+  }
+
+  obActive = true;
+  obStep   = 0;
+  _buildDots();
+  _showStep(obStep);
+}
+
+// ── Build the dot indicators ─────────────────────────────────
+function _buildDots() {
+  const el = document.getElementById('ob-tip-dots');
+  el.innerHTML = '';
+  OB_STEPS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'ob-dot' + (i === 0 ? ' active' : '');
+    d.id = 'ob-dot-' + i;
+    el.appendChild(d);
+  });
+}
+
+// ── Show a step ──────────────────────────────────────────────
+function _showStep(idx) {
+  if (idx >= OB_STEPS.length) { obFinish(); return; }
+  const step = OB_STEPS[idx];
+
+  // Update dot states
+  document.querySelectorAll('.ob-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === idx);
+  });
+
+  // Fill tooltip content
+  document.getElementById('ob-tip-step').textContent = 'STEP ' + (idx + 1) + ' / ' + OB_STEPS.length;
+  document.getElementById('ob-tip-title').textContent = step.title;
+  document.getElementById('ob-tip-body').textContent  = step.body;
+
+  // Update goal ribbon
+  const goalEl = document.getElementById('ob-goal');
+  const goalTx = document.getElementById('ob-goal-text');
+  if (step.goal) {
+    goalTx.textContent = step.goal;
+    goalEl.classList.add('visible');
+  } else {
+    goalEl.classList.remove('visible');
+  }
+
+  // Spotlight target element
+  _spotlight(step.target);
+
+  // Position tooltip near target (or center-screen on no target)
+  setTimeout(() => _positionTooltip(step), 60);
+
+  // Show/hide skip on last step
+  const skipBtn = document.querySelector('.ob-tip-btn.skip');
+  skipBtn.style.display = idx >= OB_STEPS.length - 1 ? 'none' : '';
+
+  // Change last step CTA label
+  const nextBtn = document.querySelector('.ob-tip-btn.primary');
+  nextBtn.textContent = idx >= OB_STEPS.length - 1 ? 'START FLIPPING 🔥' : 'GOT IT →';
+
+  // Show tooltip
+  const tip = document.getElementById('ob-tooltip');
+  tip.classList.remove('hidden');
+  tip.className = 'visible arrow-' + (step.arrow || 'top');
+  tip.classList.remove('hidden');
+}
+
+// ── Spotlight an element ─────────────────────────────────────
+function _spotlight(selector) {
+  const sp = document.getElementById('ob-spotlight');
+  if (!selector) { sp.classList.remove('visible', 'pulse'); return; }
+
+  // If the target might be inside a modal that's open, or the panel itself
+  const el = document.querySelector(selector);
+  if (!el) { sp.classList.remove('visible', 'pulse'); return; }
+
+  const r   = el.getBoundingClientRect();
+  const pad = 6;
+  sp.style.top    = (r.top  - pad) + 'px';
+  sp.style.left   = (r.left - pad) + 'px';
+  sp.style.width  = (r.width  + pad * 2) + 'px';
+  sp.style.height = (r.height + pad * 2) + 'px';
+  sp.classList.add('visible', 'pulse');
+}
+
+// ── Position tooltip smartly ─────────────────────────────────
+function _positionTooltip(step) {
+  const tip = document.getElementById('ob-tooltip');
+  tip.style.top = '';tip.style.left = '';tip.style.right = '';tip.style.bottom = '';
+
+  const el = step.target ? document.querySelector(step.target) : null;
+  const tW = tip.offsetWidth  || 280;
+  const tH = tip.offsetHeight || 180;
+  const vW = window.innerWidth;
+  const vH = window.innerHeight;
+
+  if (!el) {
+    // Centre screen
+    tip.style.top  = ((vH - tH) / 2) + 'px';
+    tip.style.left = ((vW - tW) / 2) + 'px';
+    return;
+  }
+
+  const r = el.getBoundingClientRect();
+  const arrow = step.arrow || 'top';
+  const gap = 18;
+
+  if (arrow === 'left') {
+    // Tooltip to the RIGHT of the target
+    tip.style.left = (r.right + gap) + 'px';
+    tip.style.top  = Math.min(r.top, vH - tH - 12) + 'px';
+  } else if (arrow === 'right') {
+    // Tooltip to the LEFT of the target
+    tip.style.left = Math.max(8, r.left - tW - gap) + 'px';
+    tip.style.top  = Math.min(r.top, vH - tH - 12) + 'px';
+  } else if (arrow === 'top') {
+    // Tooltip BELOW the target
+    tip.style.top  = (r.bottom + gap) + 'px';
+    tip.style.left = Math.min(r.left, vW - tW - 12) + 'px';
+  } else {
+    // Tooltip ABOVE the target
+    tip.style.top  = (r.top - tH - gap) + 'px';
+    tip.style.left = Math.min(r.left, vW - tW - 12) + 'px';
+  }
+}
+
+// ── Player presses GOT IT ────────────────────────────────────
+function obNext() {
+  obStep++;
+  if (obStep >= OB_STEPS.length) { obFinish(); return; }
+  _showStep(obStep);
+}
+
+// ── Skip entire tour ─────────────────────────────────────────
+function obSkip() {
+  obFinish();
+}
+
+// ── Finish onboarding ────────────────────────────────────────
+function obFinish() {
+  obActive = false;
+  document.getElementById('ob-tooltip').classList.add('hidden');
+  document.getElementById('ob-tooltip').classList.remove('visible');
+  document.getElementById('ob-spotlight').classList.remove('visible','pulse');
+  document.getElementById('ob-goal').classList.remove('visible');
+  state.onboarded = true;
+  saveGame();
+  floatText('🔥 LET\'S BUILD AN EMPIRE!', 'var(--amber)');
+}
+
+// ── Hook: called by game actions to auto-advance ─────────────
+function obTrigger(action) {
+  if (!obActive) return;
+  const step = OB_STEPS[obStep];
+  if (step && step.waitFor === action) {
+    // Re-spotlight new target & advance after brief delay
+    setTimeout(() => { obStep++; _showStep(obStep); }, 420);
+  }
+}
+
+// ── Re-position spotlight on window resize ───────────────────
+window.addEventListener('resize', () => {
+  if (!obActive) return;
+  const step = OB_STEPS[obStep];
+  if (step) { _spotlight(step.target); _positionTooltip(step); }
+});
+
+
+function saveGame() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  const fl = document.getElementById('save-flash');
+  if (fl) { fl.style.opacity = 1; setTimeout(() => fl.style.opacity = 0, 1200); }
+}
+
+function loadGame() {
+  try {
+    const s = localStorage.getItem(SAVE_KEY);
+    if (s) Object.assign(state, JSON.parse(s));
+  } catch(e) {}
+}
+
+// ── PASSIVE INCOME ───────────────────────────────────────────
+setInterval(() => {
+  if (state.rep > 0) {
+    const income = state.rep * 400;
+    state.money += income;
+    floatText('+₹' + income.toLocaleString('en-IN') + ' REP INCOME', 'var(--text3)');
+    renderHUD();
+    saveGame();
+  }
+}, 25000);
+
+setInterval(() => {
+  if (state.auctions.length < 3) { generateAuctions(); renderAuctions(); }
+}, 35000);
+
+// ── BOOT ─────────────────────────────────────────────────────
+function bootGame() {
+  // start-overlay is now permanently hidden (onboarding replaced it)
+  document.getElementById('start-overlay').style.display = 'none';
+  document.getElementById('app').style.display = 'grid';
+  loadGame();
+  // Ensure fresh-start money is always 60k (not overwritten by old save with 50k)
+  if (!state.onboarded && state.money < 60000) state.money = 60000;
+  if (state.activeSlot >= state.garage.length) state.activeSlot = state.garage.length > 0 ? 0 : -1;
+  generateAuctions();
+  initThree();
+  renderAll();
+  // Signal to CrazyGames that gameplay has started
+  cgGameplayStart();
+}
+</script>
+</body>
+</html>
