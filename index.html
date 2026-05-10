@@ -881,8 +881,9 @@ function initThree() {
   const canvas = document.getElementById('three-canvas');
   const wrap   = document.getElementById('viewport-wrap');
   scene    = new THREE.Scene();
-  camera   = new THREE.PerspectiveCamera(52, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
-  camera.position.set(0, 1.1, 4.2);
+  camera   = new THREE.PerspectiveCamera(48, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
+  camera.position.set(0, 1.2, 3.8);
+  camera.lookAt(0, 0.6, 0);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setSize(wrap.clientWidth, wrap.clientHeight);
@@ -901,7 +902,7 @@ function initThree() {
   scene.add(amb, key, fill, rim);
 
   const grid = new THREE.GridHelper(12, 24, 0x00e5ff, 0x061824);
-  grid.position.y = -0.85;
+  grid.position.y = -1.0;
   scene.add(grid);
 
   // Build env map FIRST so materials can use it
@@ -943,16 +944,17 @@ function initThree() {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
+    camera.lookAt(0, 0.6, 0);
   });
   resizeObserver.observe(wrap);
 
-  // Fallback for browsers without ResizeObserver
   window.addEventListener('resize', () => {
     const w = wrap.clientWidth;
     const h = wrap.clientHeight;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
+    camera.lookAt(0, 0.6, 0);
   });
 
   let dragging = false, lastX = 0;
@@ -990,11 +992,19 @@ function buildBikeModel() {
         const box    = new THREE.Box3().setFromObject(model);
         const size   = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scale  = 2.6 / maxDim;
+        const scale  = 3.2 / maxDim;
         model.scale.setScalar(scale);
-        // Centre it on the grid
-        const centre = box.getCenter(new THREE.Vector3());
-        model.position.set(-centre.x * scale, -centre.y * scale + 0.05, -centre.z * scale);
+        // Recompute box after scale to get true scaled centre
+        model.scale.setScalar(scale);
+        const scaledBox    = new THREE.Box3().setFromObject(model);
+        const scaledCentre = scaledBox.getCenter(new THREE.Vector3());
+        const scaledMin    = scaledBox.min.y;
+        // Sit wheels exactly on grid, then lift 0.05 above it
+        model.position.set(
+          -scaledCentre.x,
+          -scaledMin - 1.0 + 0.05,   // wheels land just above grid (y=-1.0)
+          -scaledCentre.z
+        );
         // Apply neon env reflections + track emissive parts
         model.traverse(n => {
           if (!n.isMesh || !n.material) return;
