@@ -438,19 +438,248 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
 /* ── DISABLE any fullscreen button this game might accidentally include ── */
 /* (CrazyGames supplies its own fullscreen button; a second one is banned)  */
 #btn-fullscreen{display:none!important}
-@media(max-width:900px){
-  #app{grid-template-columns:1fr;grid-template-rows:48px 1fr auto}
+/* ══════════════════════════════════════════════════════════
+   MOBILE-FIRST RESPONSIVE SYSTEM
+   ══════════════════════════════════════════════════════════
+
+   Layout philosophy:
+   - Mobile  (<600px)  : single-column, bottom nav, slide-up drawers
+   - Tablet  (600-900) : two-column, collapsible side panels
+   - Desktop (>900px)  : full 3-column grid (original layout)
+
+   All sizes use dvh so the game fills the full viewport on
+   iOS Safari / Android Chrome without address-bar overflow.
+══════════════════════════════════════════════════════════ */
+
+/* ── DESKTOP (900px+) — original layout, kept intact ───── */
+@media(min-width:901px){
+  #app{grid-template-columns:260px 1fr 240px;grid-template-rows:48px 1fr 140px}
+  #panel-left,#panel-right{display:flex}
+  #mobile-nav{display:none}
+  #mobile-drawer-overlay{display:none}
+  .mobile-drawer{display:none}
+  #bottom-bar{display:grid;grid-template-columns:1fr 1fr 1fr}
+}
+
+/* ── TABLET (600–900px) ─────────────────────────────────── */
+@media(min-width:601px) and (max-width:900px){
+  #app{
+    grid-template-columns:1fr;
+    grid-template-rows:44px 1fr auto auto;
+    height:100dvh;
+  }
   #panel-left,#panel-right{display:none}
-  #bottom-bar{grid-template-columns:1fr;height:auto}
-  .bottom-pane+.bottom-pane{border-left:none;border-top:1px solid rgba(0,229,255,.07)}
-  #hall-wrap{height:60px}
-  #sales-log{height:60px}
+  #mobile-nav{display:flex}
+  #bottom-bar{
+    grid-column:1/-1;
+    display:grid;grid-template-columns:1fr 1fr 1fr;
+    height:auto;
+  }
+  #viewport-actions{
+    gap:.3rem;
+    padding:.35rem .5rem calc(.35rem + 36px);
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .action-node{padding:.28rem .55rem;font-size:.58rem}
+  .hud-stat{min-width:58px}
+  .hud-stat .val{font-size:.72rem}
+  .hud-logo{font-size:.95rem}
+  /* hide some HUD items on tablet to save space */
+  #save-flash{display:none}
 }
+
+/* ── MOBILE (<600px) — mobile-game layout ───────────────── */
 @media(max-width:600px){
-  .hud-stat{min-width:55px}
-  .hud-stat .val{font-size:.7rem}
-  .hud-logo{font-size:.9rem}
+  /* Reset base font so rem units scale nicely */
+  html,body{font-size:15px}
+
+  /* Core app grid: topbar | 3D viewport | bottom nav */
+  #app{
+    grid-template-columns:1fr;
+    grid-template-rows:44px 1fr 56px;
+    height:100dvh;
+    gap:0;
+  }
+
+  /* ── TOP HUD — condensed for mobile ── */
+  #hud-top{
+    padding:0 .6rem;gap:.4rem;
+    grid-column:1/-1;
+  }
+  .hud-logo{font-size:.82rem;letter-spacing:.08em}
+  /* hide secondary HUD stats — shown in drawers instead */
+  .hud-stat{display:none}
+  #hud-vibe-stat{display:none}
+  /* keep only Money stat visible */
+  #hud-money-stat{display:flex;min-width:72px}
+  #save-flash{display:none}
+  /* collapse HUD buttons to icon-only */
+  .hud-btn{padding:.22rem .45rem;font-size:.55rem;letter-spacing:.02em}
+  /* hide daily / dyno from top bar — moved to mobile nav */
+  #hud-btn-daily,#hud-btn-dyno{display:none}
+
+  /* ── PANELS — hidden on mobile, opened via drawer ── */
+  #panel-left,#panel-right,#bottom-bar{display:none}
+
+  /* ── CENTER VIEWPORT — full remaining height ── */
+  #viewport-wrap{
+    grid-row:2;grid-column:1;
+    height:100%;
+  }
+  #three-canvas{width:100%;height:100%}
+
+  /* ── VIEWPORT ACTIONS — floating pill row ── */
+  #viewport-actions{
+    position:absolute;bottom:0;left:0;right:0;
+    display:flex;
+    gap:.3rem;padding:.4rem .5rem calc(.4rem + 36px);
+    flex-wrap:wrap;justify-content:center;
+    background:linear-gradient(transparent,rgba(0,5,8,.97));
+    z-index:20;
+  }
+  .action-node{
+    padding:.32rem .65rem;
+    font-size:.6rem;
+    border-radius:var(--r);
+    /* larger touch targets */
+    min-height:34px;display:flex;align-items:center;
+  }
+
+  /* ── MOBILE BOTTOM NAV ── */
+  #mobile-nav{
+    grid-row:3;grid-column:1;
+    display:flex;align-items:stretch;
+    background:rgba(0,5,8,.98);
+    border-top:1px solid var(--hudb);
+    z-index:300;
+  }
+  .mob-nav-btn{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:2px;border:none;background:none;
+    color:var(--text3);cursor:pointer;
+    font-family:var(--ff-mono);font-size:.42rem;
+    letter-spacing:.06em;text-transform:uppercase;
+    transition:color .15s;
+    -webkit-tap-highlight-color:transparent;
+    padding:.3rem 0;
+  }
+  .mob-nav-btn .nav-icon{font-size:1.1rem;line-height:1}
+  .mob-nav-btn.active,.mob-nav-btn:active{color:var(--cyan)}
+  .mob-nav-btn.amber-nav.active,.mob-nav-btn.amber-nav:active{color:var(--amber)}
+
+  /* ── MOBILE DRAWERS — slide up from bottom ── */
+  #mobile-drawer-overlay{
+    position:fixed;inset:0;
+    background:rgba(0,5,8,.7);
+    z-index:400;
+    opacity:0;pointer-events:none;
+    transition:opacity .25s;
+  }
+  #mobile-drawer-overlay.open{opacity:1;pointer-events:all}
+
+  .mobile-drawer{
+    position:fixed;bottom:0;left:0;right:0;
+    z-index:410;
+    background:var(--c1);
+    border-top:1px solid var(--hudb);
+    border-radius:16px 16px 0 0;
+    max-height:78dvh;
+    overflow-y:auto;
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    -webkit-overflow-scrolling:touch;
+  }
+  .mobile-drawer.open{transform:translateY(0)}
+
+  .mob-drawer-handle{
+    width:36px;height:4px;
+    background:var(--text3);border-radius:2px;
+    margin:.7rem auto .4rem;
+    flex-shrink:0;
+  }
+  .mob-drawer-title{
+    font-family:var(--ff-head);font-weight:900;font-style:italic;
+    font-size:1rem;color:var(--cyan);
+    text-transform:uppercase;letter-spacing:.08em;
+    padding:.1rem 1rem .6rem;
+    border-bottom:1px solid rgba(0,229,255,.08);
+  }
+  .mob-drawer-body{padding:.65rem .85rem 1.5rem}
+
+  /* Drawer — Garage panel contents */
+  #mob-garage-slots{display:flex;flex-direction:column;gap:6px;margin-bottom:.75rem}
+  .mob-garage-actions{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.85rem}
+  .mob-module-row{margin-bottom:.55rem}
+
+  /* Drawer — Auction panel contents */
+  #mob-auction-list{display:flex;flex-direction:column;gap:5px}
+
+  /* Drawer — Stats / bottom bar contents */
+  .mob-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.85rem}
+  .mob-stat-card{
+    background:var(--hud);border:1px solid var(--hudb);
+    border-radius:var(--r2);padding:.55rem .7rem;text-align:center;
+  }
+  .mob-stat-label{font-size:.48rem;font-family:var(--ff-mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
+  .mob-stat-val{font-size:1.1rem;font-family:var(--ff-mono);color:var(--cyan);font-weight:700;margin-top:2px}
+  .mob-stat-val.gold{color:var(--amber)}
+  .mob-stat-val.green{color:var(--green)}
+
+  /* Vibe grid in drawer */
+  #mob-vibe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:.75rem}
+
+  /* Sales log in drawer */
+  #mob-sales-log{max-height:160px;overflow-y:auto}
+
+  /* Hall of fame in drawer */
+  #mob-hall-wrap{display:flex;gap:5px;overflow-x:auto;padding:.25rem 0;margin-bottom:.5rem}
+
+  /* Sliders — bigger touch targets on mobile */
+  input[type=range].hud-slider{height:5px}
+  input[type=range].hud-slider::-webkit-slider-thumb{width:20px;height:20px}
+
+  /* Modals — full-width on mobile */
+  .modal-box{
+    max-width:100vw;width:100vw;
+    border-radius:16px 16px 0 0;
+    position:fixed;bottom:0;left:0;right:0;
+    margin:0;padding:1.1rem;
+    max-height:90dvh;overflow-y:auto;
+    transform:translateY(20px);
+  }
+  .modal-backdrop{align-items:flex-end}
+
+  /* Onboarding intro — tighter on mobile */
+  .ob-loop{flex-direction:column;gap:.5rem;width:100%;padding:0 1rem}
+  .ob-pillar{flex-direction:row;min-width:unset;width:100%;padding:.65rem 1rem;text-align:left;gap:.75rem}
+  .ob-pillar-icon{font-size:1.4rem}
+  .ob-arrow{transform:rotate(90deg);margin:.1rem auto}
+  .ob-divider{margin:1rem 0}
+  .ob-capital{text-align:center;margin:0 1rem}
+  .ob-cta{width:calc(100% - 2rem);padding:.9rem 1rem}
+
+  /* Tutorial tooltip — bottom sheet on mobile */
+  #ob-tooltip{
+    position:fixed;bottom:64px;left:.75rem;right:.75rem;
+    max-width:unset;width:auto;
+  }
+  #ob-goal{font-size:.5rem;white-space:normal;text-align:center;top:44px}
 }
+
+/* ── Touch improvements (all mobile sizes) ─────────────── */
+@media(hover:none) and (pointer:coarse){
+  /* Prevent tiny tap targets */
+  button,.hud-btn,.action-node,.slot,.auction-card,.vibe-opt,.skill-node{
+    min-height:36px;
+  }
+  /* Eliminate 300ms tap delay */
+  *{touch-action:manipulation}
+  /* Prevent text selection during swipe */
+  #app,#mobile-nav,.mobile-drawer{user-select:none;-webkit-user-select:none}
+}
+
 </style>
 </head>
 <body>
@@ -527,26 +756,26 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
   <div id="hud-top">
     <div class="hud-logo" id="hud-logo">AEVITH<span>MOTO</span></div>
     <div class="hud-sep"></div>
-    <div class="hud-stat">
+    <div class="hud-stat" id="hud-money-stat">
       <label>Capital</label>
       <div class="val gold" id="hud-money">&#8377;0</div>
     </div>
-    <div class="hud-stat">
+    <div class="hud-stat" id="hud-rep-stat">
       <label>Rep</label>
       <div class="val" id="hud-rep">0</div>
     </div>
-    <div class="hud-stat">
+    <div class="hud-stat" id="hud-level-stat">
       <label>Level</label>
       <div class="val" id="hud-level">1</div>
       <div class="hud-level-bar"><div class="hud-level-fill" id="hud-xp-bar" style="width:0%"></div></div>
     </div>
-    <div class="hud-stat">
+    <div class="hud-stat" id="hud-vibe-stat">
       <label>Vibe</label>
       <div class="val green" id="hud-vibe">0%</div>
     </div>
     <div class="hud-sep"></div>
-    <button class="hud-btn amber" onclick="openDailyAuction()">&#9889; DAILY MYTHIC</button>
-    <button class="hud-btn" onclick="openDyno()">DYNO RUN</button>
+    <button class="hud-btn amber" id="hud-btn-daily" onclick="openDailyAuction()">&#9889; DAILY MYTHIC</button>
+    <button class="hud-btn" id="hud-btn-dyno" onclick="openDyno()">DYNO RUN</button>
     <button class="hud-btn" onclick="openAuction()">+ BUY BIKE</button>
     <!-- PHONK CONTROL -->
     <button class="hud-btn amber" id="phonk-toggle-btn" onclick="togglePhonk()">&#127925; PHONK OFF</button>
@@ -643,6 +872,135 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════
+       MOBILE BOTTOM NAV BAR
+       ══════════════════════════════════════════════════════ -->
+  <nav id="mobile-nav">
+    <button class="mob-nav-btn" id="nav-garage" onclick="mobOpenDrawer('garage')">
+      <span class="nav-icon">🔧</span>GARAGE
+    </button>
+    <button class="mob-nav-btn amber-nav" id="nav-auction" onclick="mobOpenDrawer('auction')">
+      <span class="nav-icon">🏍️</span>BUY
+    </button>
+    <button class="mob-nav-btn amber-nav" id="nav-daily" onclick="openDailyAuction()">
+      <span class="nav-icon">⚡</span>DAILY
+    </button>
+    <button class="mob-nav-btn" id="nav-dyno" onclick="openDyno()">
+      <span class="nav-icon">📊</span>DYNO
+    </button>
+    <button class="mob-nav-btn" id="nav-stats" onclick="mobOpenDrawer('stats')">
+      <span class="nav-icon">📈</span>STATS
+    </button>
+  </nav>
+
+</div><!-- /#app -->
+
+<!-- ══════════════════════════════════════════════════════════
+     MOBILE DRAWER OVERLAY
+     ══════════════════════════════════════════════════════════ -->
+<div id="mobile-drawer-overlay" onclick="mobCloseDrawer()"></div>
+
+<!-- ── GARAGE DRAWER ── -->
+<div class="mobile-drawer" id="mob-drawer-garage">
+  <div class="mob-drawer-handle"></div>
+  <div class="mob-drawer-title">🔧 GARAGE BAYS</div>
+  <div class="mob-drawer-body">
+
+    <!-- Stats strip -->
+    <div class="mob-stats-grid">
+      <div class="mob-stat-card">
+        <div class="mob-stat-label">Capital</div>
+        <div class="mob-stat-val gold" id="mob-money">₹0</div>
+      </div>
+      <div class="mob-stat-card">
+        <div class="mob-stat-label">Level</div>
+        <div class="mob-stat-val" id="mob-level">1</div>
+      </div>
+      <div class="mob-stat-card">
+        <div class="mob-stat-label">Rep</div>
+        <div class="mob-stat-val" id="mob-rep">0</div>
+      </div>
+      <div class="mob-stat-card">
+        <div class="mob-stat-label">Vibe</div>
+        <div class="mob-stat-val green" id="mob-vibe">0%</div>
+      </div>
+    </div>
+
+    <!-- Garage slots -->
+    <div class="p-section-title" style="margin-bottom:.45rem">Bikes in Bay</div>
+    <div id="mob-garage-slots" class="mob-garage-slots"></div>
+    <div class="mob-garage-actions">
+      <button class="action-node" style="justify-content:center" onclick="openAuction();mobCloseDrawer()">+ ACQUIRE</button>
+      <button class="action-node amber" style="justify-content:center" onclick="repairBike(10)">REPAIR</button>
+      <button class="action-node" style="justify-content:center;color:var(--red);border-color:rgba(255,23,68,.3)" onclick="sellCurrentBike()">SELL BIKE</button>
+      <button class="action-node amber" style="justify-content:center" onclick="openPrivateViewing();mobCloseDrawer()">👁 PRIVATE VIEW</button>
+    </div>
+
+    <!-- Restoration modules -->
+    <div class="p-section-title" style="margin-bottom:.45rem">Restoration Modules</div>
+    <div class="mob-module-row">
+      <div class="module-name">Engine Core <span id="mob-mod-engine-val">0</span></div>
+      <div class="slider-track">
+        <div class="slider-fill" id="mob-mod-engine-fill" style="width:0%"></div>
+        <input type="range" class="hud-slider" id="mob-mod-engine" min="0" max="100" value="0" oninput="updateModuleMob('engine',this.value)">
+      </div>
+    </div>
+    <div class="mob-module-row">
+      <div class="module-name">Aero Fairings <span id="mob-mod-aero-val">0</span></div>
+      <div class="slider-track">
+        <div class="slider-fill" id="mob-mod-aero-fill" style="width:0%"></div>
+        <input type="range" class="hud-slider" id="mob-mod-aero" min="0" max="100" value="0" oninput="updateModuleMob('aero',this.value)">
+      </div>
+    </div>
+    <div class="mob-module-row">
+      <div class="module-name">ECU Tuning <span id="mob-mod-ecu-val">0</span></div>
+      <div class="slider-track">
+        <div class="slider-fill" id="mob-mod-ecu-fill" style="width:0%"></div>
+        <input type="range" class="hud-slider" id="mob-mod-ecu" min="0" max="100" value="0" oninput="updateModuleMob('ecu',this.value)">
+      </div>
+    </div>
+    <div class="cond-display" style="margin:.4rem 0 0">
+      <span style="font-size:.58rem;font-family:var(--ff-mono);color:var(--text3);width:55px;flex-shrink:0">Condition</span>
+      <div class="cond-bar"><div class="cond-bar-fill" id="mob-cond-fill" style="width:0%"></div></div>
+      <span class="cond-pct" id="mob-cond-pct">0%</span>
+    </div>
+    <div style="margin-top:.6rem">
+      <button class="action-node green" style="width:100%;justify-content:center" onclick="openFirstStart()">🔥 FIRST START</button>
+    </div>
+
+    <!-- Phonk toggle -->
+    <div style="margin-top:.75rem">
+      <button class="hud-btn amber" id="mob-phonk-btn" style="width:100%;padding:.55rem;font-size:.7rem" onclick="togglePhonk();mobSyncPhonkBtn()">🎵 PHONK OFF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUCTION DRAWER ── -->
+<div class="mobile-drawer" id="mob-drawer-auction">
+  <div class="mob-drawer-handle"></div>
+  <div class="mob-drawer-title">🏍️ LIVE AUCTION FEED</div>
+  <div class="mob-drawer-body">
+    <button class="action-node" style="width:100%;justify-content:center;font-size:.6rem;margin-bottom:.65rem" onclick="generateAuctions();renderAuctions();mobSyncAuctions()">⟳ REFRESH FEED</button>
+    <div id="mob-auction-list"></div>
+  </div>
+</div>
+
+<!-- ── STATS DRAWER ── -->
+<div class="mobile-drawer" id="mob-drawer-stats">
+  <div class="mob-drawer-handle"></div>
+  <div class="mob-drawer-title">📈 STATS &amp; SHOWROOM</div>
+  <div class="mob-drawer-body">
+
+    <div class="p-section-title" style="margin-bottom:.5rem">Showroom Vibe</div>
+    <div id="mob-vibe-grid"></div>
+
+    <div class="p-section-title" style="margin:.8rem 0 .5rem">Sales Log</div>
+    <div id="mob-sales-log"></div>
+
+    <div class="p-section-title" style="margin:.8rem 0 .5rem">Hall of Fame</div>
+    <div id="mob-hall-wrap" class="mob-hall-wrap"></div>
+
+  </div>
 </div>
 
 <!-- MODALS -->
@@ -2386,19 +2744,214 @@ setInterval(() => {
 
 // ── BOOT ─────────────────────────────────────────────────────
 function bootGame() {
-  // start-overlay is now permanently hidden (onboarding replaced it)
   document.getElementById('start-overlay').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   loadGame();
-  // Ensure fresh-start money is always 60k (not overwritten by old save with 50k)
   if (!state.onboarded && state.money < 60000) state.money = 60000;
   if (state.activeSlot >= state.garage.length) state.activeSlot = state.garage.length > 0 ? 0 : -1;
   generateAuctions();
   initThree();
   renderAll();
-  // Signal to CrazyGames that gameplay has started
+  mobRenderAll(); // sync mobile drawers
   cgGameplayStart();
 }
+
+// ════════════════════════════════════════════════════════════
+//  MOBILE DRAWER SYSTEM
+// ════════════════════════════════════════════════════════════
+
+let _mobActiveDrawer = null;
+
+function mobOpenDrawer(name) {
+  // Close any open drawer first
+  if (_mobActiveDrawer) {
+    const prev = document.getElementById('mob-drawer-' + _mobActiveDrawer);
+    if (prev) prev.classList.remove('open');
+  }
+  // Sync content before opening
+  if (name === 'garage')  mobSyncGarage();
+  if (name === 'auction') mobSyncAuctions();
+  if (name === 'stats')   mobSyncStats();
+
+  const drawer = document.getElementById('mob-drawer-' + name);
+  if (!drawer) return;
+  drawer.classList.add('open');
+  document.getElementById('mobile-drawer-overlay').classList.add('open');
+  _mobActiveDrawer = name;
+
+  // Highlight active nav button
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+  const navBtn = document.getElementById('nav-' + name);
+  if (navBtn) navBtn.classList.add('active');
+}
+
+function mobCloseDrawer() {
+  if (_mobActiveDrawer) {
+    const drawer = document.getElementById('mob-drawer-' + _mobActiveDrawer);
+    if (drawer) drawer.classList.remove('open');
+    _mobActiveDrawer = null;
+  }
+  document.getElementById('mobile-drawer-overlay').classList.remove('open');
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+}
+
+// ── Sync garage drawer ───────────────────────────────────────
+function mobSyncGarage() {
+  // Stats strip
+  const s = state;
+  const mMoney = document.getElementById('mob-money');
+  const mLevel = document.getElementById('mob-level');
+  const mRep   = document.getElementById('mob-rep');
+  const mVibe  = document.getElementById('mob-vibe');
+  if (mMoney) mMoney.textContent = '₹' + Math.floor(s.money).toLocaleString('en-IN');
+  if (mLevel) mLevel.textContent = s.level;
+  if (mRep)   mRep.textContent   = s.rep;
+  // Vibe calc — reuse desktop logic
+  const vibeScore = calcVibeBonus ? calcVibeBonus() : 0;
+  if (mVibe) mVibe.textContent = Math.round(vibeScore * 100) + '%';
+
+  // Garage slots — clone desktop slot markup
+  const container = document.getElementById('mob-garage-slots');
+  if (!container) return;
+  container.innerHTML = '';
+  if (s.garage.length === 0) {
+    container.innerHTML = '<div style="font-size:.65rem;color:var(--text3);font-family:var(--ff-mono);padding:.5rem 0">No bikes yet — hit BUY to start</div>';
+  } else {
+    s.garage.forEach((slot, i) => {
+      const bd = BIKES.find(b => b.id === slot.bikeId) || {};
+      const condColor = slot.condition > 70 ? 'var(--green)' : slot.condition > 40 ? 'var(--amber)' : 'var(--red)';
+      const div = document.createElement('div');
+      div.className = 'slot' + (i === s.activeSlot ? ' active' : '');
+      div.onclick = () => { s.activeSlot = i; buildBikeModel(); renderAll(); mobSyncGarage(); };
+      div.innerHTML = `
+        <div class="slot-icon">${bd.icon || '🏍️'}</div>
+        <div class="slot-info">
+          <div class="slot-name">${bd.name || 'Unknown'}</div>
+          <div class="slot-sub">ENG ${slot.engine} · AER ${slot.aero} · ECU ${slot.ecu}</div>
+          <div class="slot-cond"><div class="slot-cond-fill" style="width:${slot.condition}%;background:${condColor}"></div></div>
+        </div>`;
+      container.appendChild(div);
+    });
+  }
+
+  // Module sliders
+  const active = s.garage[s.activeSlot];
+  const vals = active ? active : { engine:0, aero:0, ecu:0, condition:0 };
+  ['engine','aero','ecu'].forEach(m => {
+    const slider = document.getElementById('mob-mod-' + m);
+    const fill   = document.getElementById('mob-mod-' + m + '-fill');
+    const val    = document.getElementById('mob-mod-' + m + '-val');
+    if (slider) slider.value = vals[m] || 0;
+    if (fill)   fill.style.width = (vals[m] || 0) + '%';
+    if (val)    val.textContent  = vals[m] || 0;
+  });
+  const condFill = document.getElementById('mob-cond-fill');
+  const condPct  = document.getElementById('mob-cond-pct');
+  if (condFill) condFill.style.width = (vals.condition || 0) + '%';
+  if (condFill) condFill.style.background = vals.condition > 70 ? 'var(--green)' : vals.condition > 40 ? 'var(--amber)' : 'var(--red)';
+  if (condPct)  condPct.textContent = (vals.condition || 0) + '%';
+
+  // Phonk button
+  mobSyncPhonkBtn();
+}
+
+// updateModule mirror for mobile sliders
+function updateModuleMob(mod, rawVal) {
+  // delegate to the desktop updateModule which handles all logic
+  updateModule(mod, rawVal);
+  // then resync the desktop sliders in case they're visible
+  mobSyncGarage();
+}
+
+function mobSyncPhonkBtn() {
+  const btn = document.getElementById('mob-phonk-btn');
+  if (!btn) return;
+  const on = typeof phonkEnabled !== 'undefined' && phonkEnabled;
+  btn.textContent = on ? '🎵 PHONK ON' : '🎵 PHONK OFF';
+  btn.classList.toggle('phonk-active', on);
+}
+
+// ── Sync auction drawer ──────────────────────────────────────
+function mobSyncAuctions() {
+  const container = document.getElementById('mob-auction-list');
+  if (!container) return;
+  container.innerHTML = '';
+  state.auctions.forEach((a, idx) => {
+    const bd = BIKES.find(b => b.id === a.bikeId) || {};
+    const card = document.createElement('div');
+    card.className = 'auction-card' + (a.isDaily ? ' mythic' : '');
+    card.innerHTML = `
+      <div class="ac-header">
+        <span class="ac-name">${bd.icon || ''} ${bd.name || a.bikeId}</span>
+        <span class="ac-badge ${bd.rarity || 'common'}">${(bd.rarity || 'common').toUpperCase()}</span>
+      </div>
+      <div class="ac-price">₹${a.price.toLocaleString('en-IN')}</div>
+      <div class="ac-stats">
+        <span class="ac-stat">COND ${a.condition}%</span>
+        <span class="ac-stat">· ${bd.cc || '?'}cc</span>
+      </div>`;
+    card.onclick = () => { mobCloseDrawer(); openAuctionDetail(idx); };
+    container.appendChild(card);
+  });
+  if (state.auctions.length === 0) {
+    container.innerHTML = '<div style="font-size:.65rem;color:var(--text3);font-family:var(--ff-mono);padding:.5rem 0">No auctions — tap Refresh</div>';
+  }
+}
+
+// ── Sync stats drawer ────────────────────────────────────────
+function mobSyncStats() {
+  // Vibe grid
+  const mg = document.getElementById('mob-vibe-grid');
+  const dg = document.getElementById('vibe-grid');
+  if (mg && dg) mg.innerHTML = dg.innerHTML;
+  // Re-attach onclick handlers on cloned vibe opts
+  if (mg) {
+    mg.querySelectorAll('.vibe-opt').forEach(el => {
+      const cat = el.dataset.cat, val = el.dataset.val;
+      if (cat && val) el.onclick = () => { setVibe(cat, val); mobSyncStats(); };
+    });
+  }
+
+  // Sales log
+  const msl = document.getElementById('mob-sales-log');
+  const dsl = document.getElementById('sales-log');
+  if (msl && dsl) msl.innerHTML = dsl.innerHTML;
+
+  // Hall of fame
+  const mhw = document.getElementById('mob-hall-wrap');
+  const dhw = document.getElementById('hall-wrap');
+  if (mhw && dhw) mhw.innerHTML = dhw.innerHTML;
+}
+
+// ── Master mobile render — called after any state change ─────
+function mobRenderAll() {
+  if (_mobActiveDrawer === 'garage')  mobSyncGarage();
+  if (_mobActiveDrawer === 'auction') mobSyncAuctions();
+  if (_mobActiveDrawer === 'stats')   mobSyncStats();
+  // always keep money in garage drawer synced (stat strip)
+  const mMoney = document.getElementById('mob-money');
+  if (mMoney) mMoney.textContent = '₹' + Math.floor(state.money).toLocaleString('en-IN');
+}
+
+// Patch renderAll to also trigger mobile sync
+const _origRenderAll = typeof renderAll === 'function' ? renderAll : null;
+function renderAll() {
+  if (_origRenderAll) _origRenderAll();
+  mobRenderAll();
+}
+
+// ── Swipe-to-close on drawers ────────────────────────────────
+(function initSwipeClose() {
+  let startY = 0;
+  document.querySelectorAll('.mobile-drawer').forEach(drawer => {
+    drawer.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive:true });
+    drawer.addEventListener('touchend', e => {
+      const dy = e.changedTouches[0].clientY - startY;
+      if (dy > 60) mobCloseDrawer(); // swipe down 60px → close
+    }, { passive:true });
+  });
+})();
+
 </script>
 </body>
 </html>
