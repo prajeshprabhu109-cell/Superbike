@@ -6,17 +6,22 @@
 <title>AEVITH MOTO | Superbike Tycoon</title>
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
-// ── CrazyGames SDK Init & Analytics ─────────────────────────
-// Signal loading has started as early as possible
-window.addEventListener('load', () => {
+window._cgSDKReady = false;
+window.addEventListener('load', async () => {
+  const h = location.hostname;
+  if (location.protocol === 'file:' || !h || h === 'localhost' || h === '127.0.0.1') return;
   try {
     if (window.CrazyGames && window.CrazyGames.SDK) {
-      window.CrazyGames.SDK.game.loadingStart();
+      await window.CrazyGames.SDK.init();
+      window._cgSDKReady = true;
+      if (typeof window.CrazyGames.SDK.game.sdkGameLoadingStart === 'function')
+        window.CrazyGames.SDK.game.sdkGameLoadingStart();
     }
-  } catch(e) { console.warn('[CG SDK] loadingStart failed:', e); }
+  } catch(e) {}
 });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&family=Exo+2:ital,wght@0,100;0,400;0,900;1,900&display=swap" rel="stylesheet">
 <style>
@@ -438,248 +443,19 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
 /* ── DISABLE any fullscreen button this game might accidentally include ── */
 /* (CrazyGames supplies its own fullscreen button; a second one is banned)  */
 #btn-fullscreen{display:none!important}
-/* ══════════════════════════════════════════════════════════
-   MOBILE-FIRST RESPONSIVE SYSTEM
-   ══════════════════════════════════════════════════════════
-
-   Layout philosophy:
-   - Mobile  (<600px)  : single-column, bottom nav, slide-up drawers
-   - Tablet  (600-900) : two-column, collapsible side panels
-   - Desktop (>900px)  : full 3-column grid (original layout)
-
-   All sizes use dvh so the game fills the full viewport on
-   iOS Safari / Android Chrome without address-bar overflow.
-══════════════════════════════════════════════════════════ */
-
-/* ── DESKTOP (900px+) — original layout, kept intact ───── */
-@media(min-width:901px){
-  #app{grid-template-columns:260px 1fr 240px;grid-template-rows:48px 1fr 140px}
-  #panel-left,#panel-right{display:flex}
-  #mobile-nav{display:none}
-  #mobile-drawer-overlay{display:none}
-  .mobile-drawer{display:none}
-  #bottom-bar{display:grid;grid-template-columns:1fr 1fr 1fr}
-}
-
-/* ── TABLET (600–900px) ─────────────────────────────────── */
-@media(min-width:601px) and (max-width:900px){
-  #app{
-    grid-template-columns:1fr;
-    grid-template-rows:44px 1fr auto auto;
-    height:100dvh;
-  }
+@media(max-width:900px){
+  #app{grid-template-columns:1fr;grid-template-rows:48px 1fr auto}
   #panel-left,#panel-right{display:none}
-  #mobile-nav{display:flex}
-  #bottom-bar{
-    grid-column:1/-1;
-    display:grid;grid-template-columns:1fr 1fr 1fr;
-    height:auto;
-  }
-  #viewport-actions{
-    gap:.3rem;
-    padding:.35rem .5rem calc(.35rem + 36px);
-    flex-wrap:wrap;
-    justify-content:center;
-  }
-  .action-node{padding:.28rem .55rem;font-size:.58rem}
-  .hud-stat{min-width:58px}
-  .hud-stat .val{font-size:.72rem}
-  .hud-logo{font-size:.95rem}
-  /* hide some HUD items on tablet to save space */
-  #save-flash{display:none}
+  #bottom-bar{grid-template-columns:1fr;height:auto}
+  .bottom-pane+.bottom-pane{border-left:none;border-top:1px solid rgba(0,229,255,.07)}
+  #hall-wrap{height:60px}
+  #sales-log{height:60px}
 }
-
-/* ── MOBILE (<600px) — mobile-game layout ───────────────── */
 @media(max-width:600px){
-  /* Reset base font so rem units scale nicely */
-  html,body{font-size:15px}
-
-  /* Core app grid: topbar | 3D viewport | bottom nav */
-  #app{
-    grid-template-columns:1fr;
-    grid-template-rows:44px 1fr 56px;
-    height:100dvh;
-    gap:0;
-  }
-
-  /* ── TOP HUD — condensed for mobile ── */
-  #hud-top{
-    padding:0 .6rem;gap:.4rem;
-    grid-column:1/-1;
-  }
-  .hud-logo{font-size:.82rem;letter-spacing:.08em}
-  /* hide secondary HUD stats — shown in drawers instead */
-  .hud-stat{display:none}
-  #hud-vibe-stat{display:none}
-  /* keep only Money stat visible */
-  #hud-money-stat{display:flex;min-width:72px}
-  #save-flash{display:none}
-  /* collapse HUD buttons to icon-only */
-  .hud-btn{padding:.22rem .45rem;font-size:.55rem;letter-spacing:.02em}
-  /* hide daily / dyno from top bar — moved to mobile nav */
-  #hud-btn-daily,#hud-btn-dyno{display:none}
-
-  /* ── PANELS — hidden on mobile, opened via drawer ── */
-  #panel-left,#panel-right,#bottom-bar{display:none}
-
-  /* ── CENTER VIEWPORT — full remaining height ── */
-  #viewport-wrap{
-    grid-row:2;grid-column:1;
-    height:100%;
-  }
-  #three-canvas{width:100%;height:100%}
-
-  /* ── VIEWPORT ACTIONS — floating pill row ── */
-  #viewport-actions{
-    position:absolute;bottom:0;left:0;right:0;
-    display:flex;
-    gap:.3rem;padding:.4rem .5rem calc(.4rem + 36px);
-    flex-wrap:wrap;justify-content:center;
-    background:linear-gradient(transparent,rgba(0,5,8,.97));
-    z-index:20;
-  }
-  .action-node{
-    padding:.32rem .65rem;
-    font-size:.6rem;
-    border-radius:var(--r);
-    /* larger touch targets */
-    min-height:34px;display:flex;align-items:center;
-  }
-
-  /* ── MOBILE BOTTOM NAV ── */
-  #mobile-nav{
-    grid-row:3;grid-column:1;
-    display:flex;align-items:stretch;
-    background:rgba(0,5,8,.98);
-    border-top:1px solid var(--hudb);
-    z-index:300;
-  }
-  .mob-nav-btn{
-    flex:1;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    gap:2px;border:none;background:none;
-    color:var(--text3);cursor:pointer;
-    font-family:var(--ff-mono);font-size:.42rem;
-    letter-spacing:.06em;text-transform:uppercase;
-    transition:color .15s;
-    -webkit-tap-highlight-color:transparent;
-    padding:.3rem 0;
-  }
-  .mob-nav-btn .nav-icon{font-size:1.1rem;line-height:1}
-  .mob-nav-btn.active,.mob-nav-btn:active{color:var(--cyan)}
-  .mob-nav-btn.amber-nav.active,.mob-nav-btn.amber-nav:active{color:var(--amber)}
-
-  /* ── MOBILE DRAWERS — slide up from bottom ── */
-  #mobile-drawer-overlay{
-    position:fixed;inset:0;
-    background:rgba(0,5,8,.7);
-    z-index:400;
-    opacity:0;pointer-events:none;
-    transition:opacity .25s;
-  }
-  #mobile-drawer-overlay.open{opacity:1;pointer-events:all}
-
-  .mobile-drawer{
-    position:fixed;bottom:0;left:0;right:0;
-    z-index:410;
-    background:var(--c1);
-    border-top:1px solid var(--hudb);
-    border-radius:16px 16px 0 0;
-    max-height:78dvh;
-    overflow-y:auto;
-    transform:translateY(100%);
-    transition:transform .3s cubic-bezier(.4,0,.2,1);
-    -webkit-overflow-scrolling:touch;
-  }
-  .mobile-drawer.open{transform:translateY(0)}
-
-  .mob-drawer-handle{
-    width:36px;height:4px;
-    background:var(--text3);border-radius:2px;
-    margin:.7rem auto .4rem;
-    flex-shrink:0;
-  }
-  .mob-drawer-title{
-    font-family:var(--ff-head);font-weight:900;font-style:italic;
-    font-size:1rem;color:var(--cyan);
-    text-transform:uppercase;letter-spacing:.08em;
-    padding:.1rem 1rem .6rem;
-    border-bottom:1px solid rgba(0,229,255,.08);
-  }
-  .mob-drawer-body{padding:.65rem .85rem 1.5rem}
-
-  /* Drawer — Garage panel contents */
-  #mob-garage-slots{display:flex;flex-direction:column;gap:6px;margin-bottom:.75rem}
-  .mob-garage-actions{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.85rem}
-  .mob-module-row{margin-bottom:.55rem}
-
-  /* Drawer — Auction panel contents */
-  #mob-auction-list{display:flex;flex-direction:column;gap:5px}
-
-  /* Drawer — Stats / bottom bar contents */
-  .mob-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.85rem}
-  .mob-stat-card{
-    background:var(--hud);border:1px solid var(--hudb);
-    border-radius:var(--r2);padding:.55rem .7rem;text-align:center;
-  }
-  .mob-stat-label{font-size:.48rem;font-family:var(--ff-mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
-  .mob-stat-val{font-size:1.1rem;font-family:var(--ff-mono);color:var(--cyan);font-weight:700;margin-top:2px}
-  .mob-stat-val.gold{color:var(--amber)}
-  .mob-stat-val.green{color:var(--green)}
-
-  /* Vibe grid in drawer */
-  #mob-vibe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:.75rem}
-
-  /* Sales log in drawer */
-  #mob-sales-log{max-height:160px;overflow-y:auto}
-
-  /* Hall of fame in drawer */
-  #mob-hall-wrap{display:flex;gap:5px;overflow-x:auto;padding:.25rem 0;margin-bottom:.5rem}
-
-  /* Sliders — bigger touch targets on mobile */
-  input[type=range].hud-slider{height:5px}
-  input[type=range].hud-slider::-webkit-slider-thumb{width:20px;height:20px}
-
-  /* Modals — full-width on mobile */
-  .modal-box{
-    max-width:100vw;width:100vw;
-    border-radius:16px 16px 0 0;
-    position:fixed;bottom:0;left:0;right:0;
-    margin:0;padding:1.1rem;
-    max-height:90dvh;overflow-y:auto;
-    transform:translateY(20px);
-  }
-  .modal-backdrop{align-items:flex-end}
-
-  /* Onboarding intro — tighter on mobile */
-  .ob-loop{flex-direction:column;gap:.5rem;width:100%;padding:0 1rem}
-  .ob-pillar{flex-direction:row;min-width:unset;width:100%;padding:.65rem 1rem;text-align:left;gap:.75rem}
-  .ob-pillar-icon{font-size:1.4rem}
-  .ob-arrow{transform:rotate(90deg);margin:.1rem auto}
-  .ob-divider{margin:1rem 0}
-  .ob-capital{text-align:center;margin:0 1rem}
-  .ob-cta{width:calc(100% - 2rem);padding:.9rem 1rem}
-
-  /* Tutorial tooltip — bottom sheet on mobile */
-  #ob-tooltip{
-    position:fixed;bottom:64px;left:.75rem;right:.75rem;
-    max-width:unset;width:auto;
-  }
-  #ob-goal{font-size:.5rem;white-space:normal;text-align:center;top:44px}
+  .hud-stat{min-width:55px}
+  .hud-stat .val{font-size:.7rem}
+  .hud-logo{font-size:.9rem}
 }
-
-/* ── Touch improvements (all mobile sizes) ─────────────── */
-@media(hover:none) and (pointer:coarse){
-  /* Prevent tiny tap targets */
-  button,.hud-btn,.action-node,.slot,.auction-card,.vibe-opt,.skill-node{
-    min-height:36px;
-  }
-  /* Eliminate 300ms tap delay */
-  *{touch-action:manipulation}
-  /* Prevent text selection during swipe */
-  #app,#mobile-nav,.mobile-drawer{user-select:none;-webkit-user-select:none}
-}
-
 </style>
 </head>
 <body>
@@ -756,26 +532,26 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
   <div id="hud-top">
     <div class="hud-logo" id="hud-logo">AEVITH<span>MOTO</span></div>
     <div class="hud-sep"></div>
-    <div class="hud-stat" id="hud-money-stat">
+    <div class="hud-stat">
       <label>Capital</label>
       <div class="val gold" id="hud-money">&#8377;0</div>
     </div>
-    <div class="hud-stat" id="hud-rep-stat">
+    <div class="hud-stat">
       <label>Rep</label>
       <div class="val" id="hud-rep">0</div>
     </div>
-    <div class="hud-stat" id="hud-level-stat">
+    <div class="hud-stat">
       <label>Level</label>
       <div class="val" id="hud-level">1</div>
       <div class="hud-level-bar"><div class="hud-level-fill" id="hud-xp-bar" style="width:0%"></div></div>
     </div>
-    <div class="hud-stat" id="hud-vibe-stat">
+    <div class="hud-stat">
       <label>Vibe</label>
       <div class="val green" id="hud-vibe">0%</div>
     </div>
     <div class="hud-sep"></div>
-    <button class="hud-btn amber" id="hud-btn-daily" onclick="openDailyAuction()">&#9889; DAILY MYTHIC</button>
-    <button class="hud-btn" id="hud-btn-dyno" onclick="openDyno()">DYNO RUN</button>
+    <button class="hud-btn amber" onclick="openDailyAuction()">&#9889; DAILY MYTHIC</button>
+    <button class="hud-btn" onclick="openDyno()">DYNO RUN</button>
     <button class="hud-btn" onclick="openAuction()">+ BUY BIKE</button>
     <!-- PHONK CONTROL -->
     <button class="hud-btn amber" id="phonk-toggle-btn" onclick="togglePhonk()">&#127925; PHONK OFF</button>
@@ -872,135 +648,6 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════
-       MOBILE BOTTOM NAV BAR
-       ══════════════════════════════════════════════════════ -->
-  <nav id="mobile-nav">
-    <button class="mob-nav-btn" id="nav-garage" onclick="mobOpenDrawer('garage')">
-      <span class="nav-icon">🔧</span>GARAGE
-    </button>
-    <button class="mob-nav-btn amber-nav" id="nav-auction" onclick="mobOpenDrawer('auction')">
-      <span class="nav-icon">🏍️</span>BUY
-    </button>
-    <button class="mob-nav-btn amber-nav" id="nav-daily" onclick="openDailyAuction()">
-      <span class="nav-icon">⚡</span>DAILY
-    </button>
-    <button class="mob-nav-btn" id="nav-dyno" onclick="openDyno()">
-      <span class="nav-icon">📊</span>DYNO
-    </button>
-    <button class="mob-nav-btn" id="nav-stats" onclick="mobOpenDrawer('stats')">
-      <span class="nav-icon">📈</span>STATS
-    </button>
-  </nav>
-
-</div><!-- /#app -->
-
-<!-- ══════════════════════════════════════════════════════════
-     MOBILE DRAWER OVERLAY
-     ══════════════════════════════════════════════════════════ -->
-<div id="mobile-drawer-overlay" onclick="mobCloseDrawer()"></div>
-
-<!-- ── GARAGE DRAWER ── -->
-<div class="mobile-drawer" id="mob-drawer-garage">
-  <div class="mob-drawer-handle"></div>
-  <div class="mob-drawer-title">🔧 GARAGE BAYS</div>
-  <div class="mob-drawer-body">
-
-    <!-- Stats strip -->
-    <div class="mob-stats-grid">
-      <div class="mob-stat-card">
-        <div class="mob-stat-label">Capital</div>
-        <div class="mob-stat-val gold" id="mob-money">₹0</div>
-      </div>
-      <div class="mob-stat-card">
-        <div class="mob-stat-label">Level</div>
-        <div class="mob-stat-val" id="mob-level">1</div>
-      </div>
-      <div class="mob-stat-card">
-        <div class="mob-stat-label">Rep</div>
-        <div class="mob-stat-val" id="mob-rep">0</div>
-      </div>
-      <div class="mob-stat-card">
-        <div class="mob-stat-label">Vibe</div>
-        <div class="mob-stat-val green" id="mob-vibe">0%</div>
-      </div>
-    </div>
-
-    <!-- Garage slots -->
-    <div class="p-section-title" style="margin-bottom:.45rem">Bikes in Bay</div>
-    <div id="mob-garage-slots" class="mob-garage-slots"></div>
-    <div class="mob-garage-actions">
-      <button class="action-node" style="justify-content:center" onclick="openAuction();mobCloseDrawer()">+ ACQUIRE</button>
-      <button class="action-node amber" style="justify-content:center" onclick="repairBike(10)">REPAIR</button>
-      <button class="action-node" style="justify-content:center;color:var(--red);border-color:rgba(255,23,68,.3)" onclick="sellCurrentBike()">SELL BIKE</button>
-      <button class="action-node amber" style="justify-content:center" onclick="openPrivateViewing();mobCloseDrawer()">👁 PRIVATE VIEW</button>
-    </div>
-
-    <!-- Restoration modules -->
-    <div class="p-section-title" style="margin-bottom:.45rem">Restoration Modules</div>
-    <div class="mob-module-row">
-      <div class="module-name">Engine Core <span id="mob-mod-engine-val">0</span></div>
-      <div class="slider-track">
-        <div class="slider-fill" id="mob-mod-engine-fill" style="width:0%"></div>
-        <input type="range" class="hud-slider" id="mob-mod-engine" min="0" max="100" value="0" oninput="updateModuleMob('engine',this.value)">
-      </div>
-    </div>
-    <div class="mob-module-row">
-      <div class="module-name">Aero Fairings <span id="mob-mod-aero-val">0</span></div>
-      <div class="slider-track">
-        <div class="slider-fill" id="mob-mod-aero-fill" style="width:0%"></div>
-        <input type="range" class="hud-slider" id="mob-mod-aero" min="0" max="100" value="0" oninput="updateModuleMob('aero',this.value)">
-      </div>
-    </div>
-    <div class="mob-module-row">
-      <div class="module-name">ECU Tuning <span id="mob-mod-ecu-val">0</span></div>
-      <div class="slider-track">
-        <div class="slider-fill" id="mob-mod-ecu-fill" style="width:0%"></div>
-        <input type="range" class="hud-slider" id="mob-mod-ecu" min="0" max="100" value="0" oninput="updateModuleMob('ecu',this.value)">
-      </div>
-    </div>
-    <div class="cond-display" style="margin:.4rem 0 0">
-      <span style="font-size:.58rem;font-family:var(--ff-mono);color:var(--text3);width:55px;flex-shrink:0">Condition</span>
-      <div class="cond-bar"><div class="cond-bar-fill" id="mob-cond-fill" style="width:0%"></div></div>
-      <span class="cond-pct" id="mob-cond-pct">0%</span>
-    </div>
-    <div style="margin-top:.6rem">
-      <button class="action-node green" style="width:100%;justify-content:center" onclick="openFirstStart()">🔥 FIRST START</button>
-    </div>
-
-    <!-- Phonk toggle -->
-    <div style="margin-top:.75rem">
-      <button class="hud-btn amber" id="mob-phonk-btn" style="width:100%;padding:.55rem;font-size:.7rem" onclick="togglePhonk();mobSyncPhonkBtn()">🎵 PHONK OFF</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── AUCTION DRAWER ── -->
-<div class="mobile-drawer" id="mob-drawer-auction">
-  <div class="mob-drawer-handle"></div>
-  <div class="mob-drawer-title">🏍️ LIVE AUCTION FEED</div>
-  <div class="mob-drawer-body">
-    <button class="action-node" style="width:100%;justify-content:center;font-size:.6rem;margin-bottom:.65rem" onclick="generateAuctions();renderAuctions();mobSyncAuctions()">⟳ REFRESH FEED</button>
-    <div id="mob-auction-list"></div>
-  </div>
-</div>
-
-<!-- ── STATS DRAWER ── -->
-<div class="mobile-drawer" id="mob-drawer-stats">
-  <div class="mob-drawer-handle"></div>
-  <div class="mob-drawer-title">📈 STATS &amp; SHOWROOM</div>
-  <div class="mob-drawer-body">
-
-    <div class="p-section-title" style="margin-bottom:.5rem">Showroom Vibe</div>
-    <div id="mob-vibe-grid"></div>
-
-    <div class="p-section-title" style="margin:.8rem 0 .5rem">Sales Log</div>
-    <div id="mob-sales-log"></div>
-
-    <div class="p-section-title" style="margin:.8rem 0 .5rem">Hall of Fame</div>
-    <div id="mob-hall-wrap" class="mob-hall-wrap"></div>
-
-  </div>
 </div>
 
 <!-- MODALS -->
@@ -1105,150 +752,67 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
 //  AUDIO MANAGER — PHONK ENGINE v2.0
 // ════════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════════
+//  AUDIO MANAGER — sound.mp4 + Web Audio beat detection
+// ════════════════════════════════════════════════════════════
+
 const AudioMgr = (() => {
-  let ctx = null, masterGain = null;
-  let tracks = [], currentTrack = -1, playing = false;
-  let analyser = null, analyserData = null;
+  let ctx = null, analyser = null, analyserData = null, sourceNode = null;
+  let playing = false;
   let beatCallbacks = [];
-  let beatEnergy = 0, prevEnergy = 0, beatThreshold = 1.4;
+  let beatEnergy = 0, beatThreshold = 1.4;
 
-  // ── Procedural Phonk Synthesizer ──────────────────────────
-  // We generate phonk-style beats using the Web Audio API so
-  // no external audio files are needed.
-  function createPhonkLoop(ctx, gain) {
-    const dur = 1.882; // ~128 BPM bar
-    const start = ctx.currentTime;
+  // Hidden <audio> element for the MP4 track
+  const audio = document.createElement('audio');
+  audio.src    = './sound.mp4';
+  audio.loop   = true;
+  audio.preload = 'auto';
+  audio.volume = 0.7;
+  document.body.appendChild(audio);
 
-    function schedule(time) {
-      // ── 808 KICK (dark booming) ──
-      [0, 0.941, 1.176].forEach(offset => {
-        const osc  = ctx.createOscillator();
-        const gKck = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(120, time + offset);
-        osc.frequency.exponentialRampToValueAtTime(30, time + offset + 0.22);
-        gKck.gain.setValueAtTime(1.0, time + offset);
-        gKck.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.42);
-        osc.connect(gKck); gKck.connect(gain);
-        osc.start(time + offset); osc.stop(time + offset + 0.44);
-      });
-
-      // ── HI-HAT (16th note swing) ──
-      [0, 0.118, 0.235, 0.353, 0.47, 0.588, 0.706, 0.824].forEach((o, i) => {
-        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.055, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let k = 0; k < data.length; k++) data[k] = (Math.random() * 2 - 1) * (1 - k / data.length);
-        const src = ctx.createBufferSource();
-        const bqf = ctx.createBiquadFilter();
-        const gHH = ctx.createGain();
-        bqf.type = 'highpass'; bqf.frequency.value = 7200;
-        gHH.gain.value = i % 2 === 0 ? 0.18 : 0.08;
-        src.buffer = buf;
-        src.connect(bqf); bqf.connect(gHH); gHH.connect(gain);
-        src.start(time + o);
-      });
-
-      // ── SNARE (punchy) at beat 2 & 4 ──
-      [0.47, 1.41].forEach(offset => {
-        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let k = 0; k < data.length; k++) data[k] = (Math.random() * 2 - 1) * Math.exp(-k / (ctx.sampleRate * 0.035));
-        const src  = ctx.createBufferSource();
-        const bqf  = ctx.createBiquadFilter();
-        const oscS = ctx.createOscillator();
-        const gS   = ctx.createGain();
-        const gN   = ctx.createGain();
-        bqf.type = 'bandpass'; bqf.frequency.value = 2800; bqf.Q.value = 0.8;
-        gS.gain.setValueAtTime(0.55, time + offset);
-        gS.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.16);
-        gN.gain.setValueAtTime(0.3, time + offset);
-        gN.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.14);
-        oscS.type = 'triangle'; oscS.frequency.value = 220;
-        src.buffer = buf;
-        src.connect(bqf); bqf.connect(gN); gN.connect(gain);
-        oscS.connect(gS); gS.connect(gain);
-        src.start(time + offset); oscS.start(time + offset);
-        src.stop(time + offset + 0.2); oscS.stop(time + offset + 0.2);
-      });
-
-      // ── BASS STAB (phonk sub) ──
-      [0, 0.235, 0.706, 0.941].forEach((offset, i) => {
-        const osc  = ctx.createOscillator();
-        const dist = ctx.createWaveShaper();
-        const gB   = ctx.createGain();
-        const curve = new Float32Array(256);
-        for (let k = 0; k < 256; k++) { const x = k * 2 / 256 - 1; curve[k] = (Math.PI + 280) * x / (Math.PI + 280 * Math.abs(x)); }
-        dist.curve = curve;
-        osc.type = 'sawtooth';
-        osc.frequency.value = [55, 55, 73.4, 55][i];
-        gB.gain.setValueAtTime(0.28, time + offset);
-        gB.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.21);
-        osc.connect(dist); dist.connect(gB); gB.connect(gain);
-        osc.start(time + offset); osc.stop(time + offset + 0.25);
-      });
-    }
-
-    return { dur, schedule, start };
-  }
-
-  function init() {
+  function initCtx() {
     if (ctx) return;
-    ctx          = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain   = ctx.createGain();
-    masterGain.gain.value = 0.55;
-    analyser     = ctx.createAnalyser();
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = ctx.createAnalyser();
     analyser.fftSize = 64;
     analyserData = new Uint8Array(analyser.frequencyBinCount);
-    masterGain.connect(analyser);
+    // Connect <audio> element → Web Audio graph → analyser → speakers
+    sourceNode = ctx.createMediaElementSource(audio);
+    sourceNode.connect(analyser);
     analyser.connect(ctx.destination);
   }
 
   function play() {
     if (playing) return;
-    init();
+    initCtx();
     if (ctx.state === 'suspended') ctx.resume();
+    audio.play().catch(() => {});
     playing = true;
-    scheduleLoop();
     requestAnimationFrame(beatLoop);
-  }
-
-  let loopTimeout = null;
-  function scheduleLoop() {
-    if (!playing) return;
-    const loop = createPhonkLoop(ctx, masterGain);
-    loop.schedule(ctx.currentTime);
-    loopTimeout = setTimeout(scheduleLoop, loop.dur * 1000 - 50);
   }
 
   function stop() {
     playing = false;
-    clearTimeout(loopTimeout);
+    audio.pause();
   }
 
   function toggle() { playing ? stop() : play(); return playing; }
   function isPlaying() { return playing; }
 
-  // ── Beat Detection Loop ──────────────────────────────────
   function beatLoop() {
     if (!analyser || !playing) return;
     analyser.getByteFrequencyData(analyserData);
-    // Average low-frequency bins (kick/bass energy)
     let sum = 0;
     for (let i = 0; i < 4; i++) sum += analyserData[i];
     const energy = sum / 4 / 255;
-
-    beatEnergy = beatEnergy * 0.82 + energy * 0.18; // smooth
-
-    if (energy > beatEnergy * beatThreshold && energy > 0.12) {
+    beatEnergy = beatEnergy * 0.82 + energy * 0.18;
+    if (energy > beatEnergy * beatThreshold && energy > 0.08)
       beatCallbacks.forEach(cb => cb(energy));
-    }
-    prevEnergy = energy;
     requestAnimationFrame(beatLoop);
   }
 
   function onBeat(cb) { beatCallbacks.push(cb); }
 
-  // Expose analyser data for visualizer
   function getFreqData() {
     if (!analyser || !analyserData) return null;
     analyser.getByteFrequencyData(analyserData);
@@ -1459,27 +1023,21 @@ function watchAdDoubleSale() {
 // ════════════════════════════════════════════════════════════
 //  SAVE / CONSTANTS
 // ════════════════════════════════════════════════════════════
-const SAVE_KEY = 'aevith_moto_v2';
+const SAVE_KEY = 'aevith_moto_v3'; // bumped to clear old saves
 
-// ── BIKE DATABASE ─────────────────────────────────────────────
+// ── BIKE DATABASE — 4 bikes, each mapped to a real .glb file ──
 const BIKES = [
-  { id:'r15',      name:'Yamaha R15M',       icon:'🔵', cc:155,  rarity:'common', basePrice:85000,    estSell:200000,   baseHP:19,  era:1 },
-  { id:'ninja300', name:'Kawasaki Ninja 300', icon:'🟢', cc:296,  rarity:'common', basePrice:175000,   estSell:400000,   baseHP:39,  era:1 },
-  { id:'duke390',  name:'KTM Duke 390',       icon:'🟠', cc:373,  rarity:'common', basePrice:220000,   estSell:520000,   baseHP:44,  era:1 },
-  { id:'cbr650',   name:'Honda CBR 650R',     icon:'🔴', cc:649,  rarity:'rare',   basePrice:780000,   estSell:1800000,  baseHP:95,  era:2 },
-  { id:'s1000rr',  name:'BMW S1000 RR',       icon:'⚪', cc:999,  rarity:'rare',   basePrice:1900000,  estSell:4500000,  baseHP:210, era:2 },
-  { id:'panv4',    name:'Ducati Panigale V4',  icon:'🔴', cc:1103, rarity:'rare',   basePrice:2500000,  estSell:5800000,  baseHP:214, era:2 },
-  { id:'h2r',      name:'Kawasaki H2R',        icon:'🟢', cc:998,  rarity:'mythic', basePrice:5500000,  estSell:14000000, baseHP:310, era:3 },
-  { id:'batcru',   name:'Batcruiser X9',       icon:'🖤', cc:1200, rarity:'mythic', basePrice:8000000,  estSell:22000000, baseHP:420, era:3 },
-  { id:'proto1',   name:'Aevith Phantom-1',    icon:'🔷', cc:1400, rarity:'mythic', basePrice:0,        estSell:60000000, baseHP:600, era:4 },
+  { id:'ninku',   name:'Ninja Kurosaki',    icon:'🟢', cc:296,  rarity:'common', basePrice:48000,    estSell:180000,   baseHP:39,  era:1, glb:'ninku.glb'  },
+  { id:'kawani',  name:'Kawasaki Anima',    icon:'🔵', cc:636,  rarity:'rare',   basePrice:195000,   estSell:620000,   baseHP:95,  era:1, glb:'kawani.glb' },
+  { id:'kawazx',  name:'Kawasaki ZX-10R',   icon:'⚡', cc:998,  rarity:'rare',   basePrice:480000,   estSell:1400000,  baseHP:210, era:2, glb:'kawazx.glb' },
+  { id:'duc',     name:'Ducati Phantoma',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:4000000,  baseHP:214, era:2, glb:'duc.glb'    },
 ];
 
 const SKILLS = [
-  { id:'scout',     name:'Scout Network',   desc:'Unlock rare auction slots', cost:50000,   icon:'🔭', req:0  },
-  { id:'restore',   name:'Master Restorer', desc:'+25% all sell prices',      cost:150000,  icon:'🔧', req:3  },
-  { id:'ecu_pro',   name:'ECU Pro',         desc:'ECU boosts HP by 2×',       cost:350000,  icon:'💻', req:5  },
-  { id:'showroom',  name:'Laser Showroom',  desc:'+30% vibe score',           cost:600000,  icon:'💡', req:8  },
-  { id:'prototype', name:'Prototype Lab',   desc:'Unlock Aevith Phantom-1',   cost:6000000, icon:'⚗️',  req:15 },
+  { id:'scout',    name:'Scout Network',   desc:'More auction slots appear',   cost:50000,   icon:'🔭', req:0  },
+  { id:'restore',  name:'Master Restorer', desc:'+25% all sell prices',        cost:150000,  icon:'🔧', req:3  },
+  { id:'ecu_pro',  name:'ECU Pro',         desc:'ECU boosts HP by 2×',         cost:350000,  icon:'💻', req:5  },
+  { id:'showroom', name:'Laser Showroom',  desc:'+30% vibe score',             cost:600000,  icon:'💡', req:8  },
 ];
 
 const VIBES = [
@@ -1531,45 +1089,23 @@ const BASE_EMISSION = 0.35;        // resting emission intensity
 let envMap = null;
 
 function buildEnvCubeMap() {
-  // Generate a minimal dark-garage environment texture procedurally
-  // using a CubeCamera with a simple scene so we don't need external images
-  const pmremGen = new THREE.PMREMGenerator(renderer);
-  pmremGen.compileEquirectangularShader();
-
-  // Build a tiny env scene: dark background + 4 coloured point lights
+  // r128-compatible: CubeCamera only, no PMREMGenerator, no RoomEnvironment
   const envScene = new THREE.Scene();
   envScene.background = new THREE.Color(0x000810);
-
-  const addEnvLight = (hex, x, y, z, intensity) => {
-    const l = new THREE.PointLight(hex, intensity, 12);
-    l.position.set(x, y, z);
-    envScene.add(l);
-  };
-  addEnvLight(0x00e5ff, 3, 2, 0, 2);    // cyan left
-  addEnvLight(0x00e5ff, -3, 2, 0, 1.5); // cyan right
-  addEnvLight(0xffab00, 0, -1, 4, 1.2); // amber front
-  addEnvLight(0xff1744, 0, 3, -4, 0.8); // red rim
-
-  // Floating sphere grid gives "city lights" feel in reflections
-  const sphereGeo = new THREE.SphereGeometry(0.08, 4, 4);
-  for (let i = 0; i < 30; i++) {
-    const hex  = [0x00e5ff, 0xffab00, 0xff1744, 0x00e676][i % 4];
-    const mat  = new THREE.MeshBasicMaterial({ color: hex });
-    const mesh = new THREE.Mesh(sphereGeo, mat);
-    mesh.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 10);
-    envScene.add(mesh);
+  const pts = [[0x00e5ff,3,2,0,2],[0x00e5ff,-3,2,0,1.5],[0xffab00,0,-1,4,1.2],[0xff1744,0,3,-4,0.8]];
+  pts.forEach(([hex,x,y,z,i]) => { const l = new THREE.PointLight(hex,i,14); l.position.set(x,y,z); envScene.add(l); });
+  const sGeo = new THREE.SphereGeometry(0.08,4,4);
+  for (let i=0;i<24;i++) {
+    const m = new THREE.Mesh(sGeo, new THREE.MeshBasicMaterial({color:[0x00e5ff,0xffab00,0xff1744,0x00e676][i%4]}));
+    m.position.set((Math.random()-.5)*10,(Math.random()-.5)*6,(Math.random()-.5)*10);
+    envScene.add(m);
   }
-
-  const renderTarget = pmremGen.fromScene(new THREE.RoomEnvironment(), 0.04);
-  // Overlay our custom scene on top by rendering to a cube render target
-  const cubeRT = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
-  const cubeCamera = new THREE.CubeCamera(0.1, 20, cubeRT);
+  const cubeRT = new THREE.WebGLCubeRenderTarget(128,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});
+  const cubeCamera = new THREE.CubeCamera(0.1,20,cubeRT);
   envScene.add(cubeCamera);
-  cubeCamera.update(renderer, envScene);
-
+  cubeCamera.update(renderer,envScene);
   envMap = cubeRT.texture;
   scene.environment = envMap;
-  pmremGen.dispose();
 }
 
 function initThree() {
@@ -1667,172 +1203,171 @@ function buildBikeModel() {
 
   const slot  = state.activeSlot >= 0 ? state.garage[state.activeSlot] : null;
   const bData = slot ? BIKES.find(b => b.id === slot.bikeId) : null;
+  const isMythic = bData && bData.rarity === 'mythic';
+  const accHex   = isMythic ? 0xffab00 : 0x00e5ff;
 
+  // ── If bike has a GLB file, load it ─────────────────────
+  if (bData && bData.glb && window.THREE && THREE.GLTFLoader) {
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      './' + bData.glb,
+      (gltf) => {
+        if (bikeGroup) scene.remove(bikeGroup);
+        bikeGroup = new THREE.Group();
+        accentMaterials = [];
+        const model = gltf.scene;
+        // Auto-scale to fit viewport nicely
+        const box    = new THREE.Box3().setFromObject(model);
+        const size   = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale  = 2.6 / maxDim;
+        model.scale.setScalar(scale);
+        // Centre it on the grid
+        const centre = box.getCenter(new THREE.Vector3());
+        model.position.set(-centre.x * scale, -centre.y * scale + 0.05, -centre.z * scale);
+        // Apply neon env reflections + track emissive parts
+        model.traverse(n => {
+          if (!n.isMesh || !n.material) return;
+          const mats = Array.isArray(n.material) ? n.material : [n.material];
+          mats.forEach(m => {
+            m.envMap = envMap;
+            m.envMapIntensity = 1.2;
+            m.needsUpdate = true;
+            if (m.emissive) {
+              m.emissive.set(accHex);
+              m.emissiveIntensity = BASE_EMISSION * 0.5;
+              accentMaterials.push(m);
+            }
+          });
+        });
+        bikeGroup.add(model);
+        // Damage dust when condition < 50
+        if (slot && slot.condition < 50) {
+          const dustGeo = new THREE.SphereGeometry(.9,6,6);
+          const dustMat = new THREE.MeshBasicMaterial({color:0x554433,wireframe:true,transparent:true,opacity:.05});
+          bikeGroup.add(new THREE.Mesh(dustGeo, dustMat));
+        }
+        scene.add(bikeGroup);
+        updateHUDNodes();
+      },
+      undefined,
+      (err) => {
+        // GLB failed — fall back to procedural shape
+        console.warn('GLB load failed for', bData.glb, err);
+        _buildProceduralBike(slot, bData, accHex);
+      }
+    );
+    // Return early — scene.add happens in callback above
+    scene.add(bikeGroup); // add empty group now so rotation works immediately
+    updateHUDNodes();
+    return;
+  }
+
+  // ── No GLB or empty garage — draw placeholder ────────────
+  _buildProceduralBike(slot, bData, accHex);
+  scene.add(bikeGroup);
+  updateHUDNodes();
+}
+
+// r128-compatible capsule helper
+function _makeCap(radius, length, capSegs, radSegs) {
+  const parts = [];
+  const cyl = new THREE.CylinderGeometry(radius,radius,length,radSegs,1,true);
+  parts.push(cyl);
+  const top = new THREE.SphereGeometry(radius,radSegs,capSegs,0,Math.PI*2,0,Math.PI/2);
+  top.applyMatrix4(new THREE.Matrix4().makeTranslation(0,length/2,0));
+  parts.push(top);
+  const bot = new THREE.SphereGeometry(radius,radSegs,capSegs,0,Math.PI*2,Math.PI/2,Math.PI/2);
+  bot.applyMatrix4(new THREE.Matrix4().makeTranslation(0,-length/2,0));
+  parts.push(bot);
+  const pos=[],nrm=[],uv=[],idx=[];
+  let off=0;
+  parts.forEach(g=>{
+    const p=g.attributes.position,n=g.attributes.normal,u=g.attributes.uv,ix=g.index;
+    for(let i=0;i<p.count;i++){pos.push(p.getX(i),p.getY(i),p.getZ(i));nrm.push(n.getX(i),n.getY(i),n.getZ(i));uv.push(u.getX(i),u.getY(i));}
+    if(ix){for(let i=0;i<ix.count;i++)idx.push(ix.getX(i)+off);}
+    else{for(let i=0;i<p.count;i++)idx.push(i+off);}
+    off+=p.count; g.dispose();
+  });
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('normal',  new THREE.Float32BufferAttribute(nrm,3));
+  geo.setAttribute('uv',      new THREE.Float32BufferAttribute(uv,2));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  return geo;
+}
+
+function _buildProceduralBike(slot, bData, accHex) {
   const isMythic = bData && bData.rarity === 'mythic';
   const isRare   = bData && bData.rarity === 'rare';
   const bodyHex  = isMythic ? 0x000a1a : isRare ? 0x1a0005 : 0x001408;
-  const accHex   = isMythic ? 0xffab00 : 0x00e5ff;
 
-  // ── MATERIALS WITH ENV MAP ──────────────────────────────
-  const bodyMat = new THREE.MeshPhysicalMaterial({
-    color: bodyHex,
-    metalness: 0.94, roughness: 0.08,
-    clearcoat: 1, clearcoatRoughness: 0.05,
-    envMap: envMap, envMapIntensity: 1.4,
-    reflectivity: 1.0,
-  });
+  const bodyMat = new THREE.MeshPhysicalMaterial({color:bodyHex,metalness:0.94,roughness:0.08,clearcoat:1,clearcoatRoughness:0.05,envMap:envMap,envMapIntensity:1.4});
+  const accentMat = new THREE.MeshPhysicalMaterial({color:accHex,metalness:1,roughness:0.03,emissive:new THREE.Color(accHex),emissiveIntensity:BASE_EMISSION,envMap:envMap,envMapIntensity:1.8,clearcoat:1});
+  const accentMat2 = new THREE.MeshPhysicalMaterial({color:accHex,metalness:0.9,roughness:0.05,emissive:new THREE.Color(accHex),emissiveIntensity:BASE_EMISSION*0.7,envMap:envMap,envMapIntensity:1.2});
+  const chromeMat = new THREE.MeshPhysicalMaterial({color:0xcccccc,metalness:1,roughness:0.04,envMap:envMap,envMapIntensity:2.0});
+  const tireMat = new THREE.MeshPhysicalMaterial({color:0x0f0f0f,roughness:0.9,metalness:0});
+  const glassMat = new THREE.MeshPhysicalMaterial({color:accHex,transparent:true,opacity:0.22,metalness:0.5,roughness:0,envMap:envMap,envMapIntensity:1.5,clearcoat:1});
+  const seatMat = new THREE.MeshPhysicalMaterial({color:0x111111,roughness:0.85,metalness:0});
+  accentMaterials.push(accentMat, accentMat2);
 
-  const accentMat = new THREE.MeshPhysicalMaterial({
-    color: accHex,
-    metalness: 1, roughness: 0.03,
-    emissive: new THREE.Color(accHex),
-    emissiveIntensity: BASE_EMISSION,
-    envMap: envMap, envMapIntensity: 1.8,
-    clearcoat: 1,
-  });
-  accentMaterials.push(accentMat);
+  const bodyGeo = _makeCap(.36,.95,8,16);
+  bodyGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI/2));
+  const bm = new THREE.Mesh(bodyGeo,bodyMat); bm.position.set(0,.28,0); bikeGroup.add(bm);
 
-  // Extra accent for brake discs (slightly different hue)
-  const accentMat2 = new THREE.MeshPhysicalMaterial({
-    color: accHex,
-    metalness: 0.9, roughness: 0.05,
-    emissive: new THREE.Color(accHex),
-    emissiveIntensity: BASE_EMISSION * 0.7,
-    envMap: envMap, envMapIntensity: 1.2,
-  });
-  accentMaterials.push(accentMat2);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(.21,12,8,0,Math.PI*2,0,Math.PI*.5),bodyMat);
+  nose.position.set(.63,.42,0); nose.rotation.z=-Math.PI/2.4; bikeGroup.add(nose);
 
-  const chromeMat = new THREE.MeshPhysicalMaterial({
-    color: 0xcccccc,
-    metalness: 1, roughness: 0.04,
-    envMap: envMap, envMapIntensity: 2.0,
-    reflectivity: 1.0,
-  });
+  const tankGeo = _makeCap(.18,.32,6,12);
+  tankGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI/2));
+  const tank = new THREE.Mesh(tankGeo,bodyMat); tank.position.set(.08,.6,0); tank.scale.set(1,.72,.82); bikeGroup.add(tank);
 
-  const tireMat = new THREE.MeshPhysicalMaterial({
-    color: 0x0f0f0f, roughness: 0.9, metalness: 0,
-  });
+  const seatGeo = _makeCap(.11,.34,6,8);
+  seatGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI/2));
+  const seat = new THREE.Mesh(seatGeo,seatMat); seat.position.set(-.2,.6,0); seat.scale.set(1,.52,.68); bikeGroup.add(seat);
 
-  const glassMat = new THREE.MeshPhysicalMaterial({
-    color: accHex, transparent: true, opacity: 0.22,
-    metalness: 0.5, roughness: 0.0,
-    envMap: envMap, envMapIntensity: 1.5,
-    clearcoat: 1,
-  });
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(.016,.016,.5,8),chromeMat);
+  bar.rotation.z=Math.PI/2; bar.position.set(.3,.7,0); bikeGroup.add(bar);
 
-  const seatMat = new THREE.MeshPhysicalMaterial({
-    color: 0x111111, roughness: 0.85, metalness: 0,
-  });
+  const ws = new THREE.Mesh(new THREE.PlaneGeometry(.28,.18),glassMat);
+  ws.position.set(.68,.68,0); ws.rotation.z=.38; bikeGroup.add(ws);
 
-  // ── GEOMETRY (same as original, enhanced materials) ─────
-  const bodyGeo = new THREE.CapsuleGeometry(.36, .95, 8, 16);
-  bodyGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
-  bikeGroup.add(new THREE.Mesh(bodyGeo, bodyMat)).position.set(0, .28, 0);
+  const hl = new THREE.Mesh(new THREE.CircleGeometry(.085,16),new THREE.MeshBasicMaterial({color:accHex}));
+  hl.position.set(.83,.5,0); bikeGroup.add(hl);
 
-  const noseGeo = new THREE.SphereGeometry(.21, 12, 8, 0, Math.PI * 2, 0, Math.PI * .5);
-  const nose = new THREE.Mesh(noseGeo, bodyMat);
-  nose.position.set(.63, .42, 0); nose.rotation.z = -Math.PI / 2.4;
-  bikeGroup.add(nose);
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(.22,.22),new THREE.MeshBasicMaterial({color:accHex,transparent:true,opacity:0.12}));
+  halo.position.set(.84,.5,0); bikeGroup.add(halo);
 
-  const tankGeo = new THREE.CapsuleGeometry(.18, .32, 6, 12);
-  tankGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
-  const tank = new THREE.Mesh(tankGeo, bodyMat);
-  tank.position.set(.08, .6, 0); tank.scale.set(1, .72, .82);
-  bikeGroup.add(tank);
-
-  const seatGeo = new THREE.CapsuleGeometry(.11, .34, 6, 8);
-  seatGeo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
-  const seat = new THREE.Mesh(seatGeo, seatMat);
-  seat.position.set(-.2, .6, 0); seat.scale.set(1, .52, .68);
-  bikeGroup.add(seat);
-
-  const barGeo = new THREE.CylinderGeometry(.016, .016, .5, 8);
-  const bar = new THREE.Mesh(barGeo, chromeMat);
-  bar.rotation.z = Math.PI / 2; bar.position.set(.3, .7, 0);
-  bikeGroup.add(bar);
-
-  const wsGeo = new THREE.PlaneGeometry(.28, .18);
-  const ws = new THREE.Mesh(wsGeo, glassMat);
-  ws.position.set(.68, .68, 0); ws.rotation.z = .38;
-  bikeGroup.add(ws);
-
-  // Headlight — accent material (will breathe with emission)
-  const hlGeo = new THREE.CircleGeometry(.085, 16);
-  const hlMat = new THREE.MeshBasicMaterial({ color: accHex });
-  const hl = new THREE.Mesh(hlGeo, hlMat);
-  hl.position.set(.83, .5, 0);
-  bikeGroup.add(hl);
-
-  // Headlight halo — emissive plane
-  const haloGeo = new THREE.PlaneGeometry(.22, .22);
-  const haloMat = new THREE.MeshBasicMaterial({ color: accHex, transparent: true, opacity: 0.12 });
-  const halo = new THREE.Mesh(haloGeo, haloMat);
-  halo.position.set(.84, .5, 0);
-  bikeGroup.add(halo);
-
-  // Wheels
-  [-0.72, 0.72].forEach((xPos) => {
-    const wGeo = new THREE.TorusGeometry(.3, .082, 12, 30);
-    bikeGroup.add(new THREE.Mesh(wGeo, tireMat)).position.set(xPos, -.28, 0).constructor; // chain trick: just add then position
-    const w = bikeGroup.children[bikeGroup.children.length - 1];
-    w.position.set(xPos, -.28, 0); w.rotation.y = Math.PI / 2;
-
-    const rimGeo = new THREE.TorusGeometry(.2, .02, 8, 24);
-    const rimMesh = new THREE.Mesh(rimGeo, accentMat2);
-    rimMesh.position.set(xPos, -.28, 0); rimMesh.rotation.y = Math.PI / 2;
-    bikeGroup.add(rimMesh);
-
-    for (let s = 0; s < 6; s++) {
-      const spkGeo = new THREE.CylinderGeometry(.01, .01, .3, 4);
-      const spk = new THREE.Mesh(spkGeo, chromeMat);
-      spk.position.set(xPos, -.28, 0);
-      spk.rotation.x = (s / 6) * Math.PI;
-      spk.rotation.y = Math.PI / 2;
-      bikeGroup.add(spk);
+  [-0.72,0.72].forEach(x => {
+    const w = new THREE.Mesh(new THREE.TorusGeometry(.3,.082,12,30),tireMat);
+    w.position.set(x,-.28,0); w.rotation.y=Math.PI/2; bikeGroup.add(w);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(.2,.02,8,24),accentMat2);
+    rim.position.set(x,-.28,0); rim.rotation.y=Math.PI/2; bikeGroup.add(rim);
+    for(let s=0;s<6;s++){
+      const spk=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.3,4),chromeMat);
+      spk.position.set(x,-.28,0); spk.rotation.x=(s/6)*Math.PI; spk.rotation.y=Math.PI/2; bikeGroup.add(spk);
     }
+    const d=new THREE.Mesh(new THREE.TorusGeometry(.18,.008,4,24),accentMat2);
+    d.position.set(x,-.28,.03); d.rotation.y=Math.PI/2; bikeGroup.add(d);
   });
 
-  // Proper wheel (torus must be placed correctly)
-  // Front fork
-  [-.11, .11].forEach(z => {
-    const fGeo = new THREE.CylinderGeometry(.028, .022, .62, 8);
-    const f = new THREE.Mesh(fGeo, chromeMat);
-    f.position.set(.46, -.06, z); f.rotation.z = -.36;
-    bikeGroup.add(f);
+  [-.11,.11].forEach(z=>{
+    const f=new THREE.Mesh(new THREE.CylinderGeometry(.028,.022,.62,8),chromeMat);
+    f.position.set(.46,-.06,z); f.rotation.z=-.36; bikeGroup.add(f);
   });
 
-  // Exhausts
-  [-1, 1].forEach(s => {
-    const eGeo = new THREE.CylinderGeometry(.038, .052, .65, 10);
-    const e = new THREE.Mesh(eGeo, chromeMat);
-    e.position.set(-.52, -.12, s * .17); e.rotation.z = Math.PI / 4;
-    bikeGroup.add(e);
-    const tGeo = new THREE.CircleGeometry(.038, 10);
-    const tMat = new THREE.MeshBasicMaterial({ color: slot && slot.firstStartDone ? 0xff4400 : 0x222222 });
-    const t = new THREE.Mesh(tGeo, tMat);
-    t.position.set(-.82, .12 + s * .01, s * .17); t.rotation.z = -Math.PI / 4;
-    bikeGroup.add(t);
+  [-1,1].forEach(s=>{
+    const e=new THREE.Mesh(new THREE.CylinderGeometry(.038,.052,.65,10),chromeMat);
+    e.position.set(-.52,-.12,s*.17); e.rotation.z=Math.PI/4; bikeGroup.add(e);
+    const tMat=new THREE.MeshBasicMaterial({color:slot&&slot.firstStartDone?0xff4400:0x222222});
+    const t=new THREE.Mesh(new THREE.CircleGeometry(.038,10),tMat);
+    t.position.set(-.82,.12+s*.01,s*.17); t.rotation.z=-Math.PI/4; bikeGroup.add(t);
   });
 
-  // Brake discs — accent emissive
-  [-0.72, 0.72].forEach(x => {
-    const dGeo = new THREE.TorusGeometry(.18, .008, 4, 24);
-    const d = new THREE.Mesh(dGeo, accentMat2);
-    d.position.set(x, -.28, .03); d.rotation.y = Math.PI / 2;
-    bikeGroup.add(d);
-  });
-
-  // Damage dust overlay
   if (slot && slot.condition < 50) {
-    const dustGeo = new THREE.SphereGeometry(.6, 6, 6);
-    const dustMat = new THREE.MeshBasicMaterial({ color: 0x554433, wireframe: true, transparent: true, opacity: .06 });
-    const dust = new THREE.Mesh(dustGeo, dustMat);
-    dust.position.set(0, .2, 0);
-    bikeGroup.add(dust);
+    const dust=new THREE.Mesh(new THREE.SphereGeometry(.6,6,6),new THREE.MeshBasicMaterial({color:0x554433,wireframe:true,transparent:true,opacity:.06}));
+    dust.position.set(0,.2,0); bikeGroup.add(dust);
   }
-
-  scene.add(bikeGroup);
-  updateHUDNodes();
 }
 
 function toggleWireframe() {
@@ -2024,12 +1559,11 @@ function selectSlot(i) {
 let currentAuctionIdx = -1;
 
 function generateAuctions() {
-  const maxEra = Math.min(Math.ceil(state.level / 5) + 1, 4);
-  const pool = BIKES.filter(b => b.era <= maxEra && !(b.id === 'proto1' && !state.skills.includes('prototype')));
+  const pool = BIKES.slice(); // all 4 bikes always available
   state.auctions = [];
   for (let i = 0; i < 6; i++) {
-    const bd = pool[Math.floor(Math.random() * pool.length)];
-    const cond  = 10 + Math.floor(Math.random() * 55);
+    const bd   = pool[Math.floor(Math.random() * pool.length)];
+    const cond = 10 + Math.floor(Math.random() * 55);
     const price = Math.floor(bd.basePrice * (.55 + Math.random() * .45));
     state.auctions.push({ bikeId: bd.id, condition: cond, price });
   }
@@ -2441,10 +1975,6 @@ function buySkill(sk) {
   state.skills.push(sk.id);
   floatText(sk.name.toUpperCase() + ' UNLOCKED!', 'var(--green)');
   gainXP(200);
-  if (sk.id === 'prototype') {
-    BIKES.find(b => b.id === 'proto1').era = 1;
-    floatText('PROTOTYPE LAB ONLINE!', 'var(--cyan)');
-  }
   renderAll();
   saveGame();
 }
@@ -2725,6 +2255,7 @@ function loadGame() {
     const s = localStorage.getItem(SAVE_KEY);
     if (s) Object.assign(state, JSON.parse(s));
   } catch(e) {}
+  if (!state.onboarded || state.money <= 0) state.money = 60000;
 }
 
 // ── PASSIVE INCOME ───────────────────────────────────────────
@@ -2744,214 +2275,19 @@ setInterval(() => {
 
 // ── BOOT ─────────────────────────────────────────────────────
 function bootGame() {
+  // start-overlay is now permanently hidden (onboarding replaced it)
   document.getElementById('start-overlay').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   loadGame();
+  // Ensure fresh-start money is always 60k (not overwritten by old save with 50k)
   if (!state.onboarded && state.money < 60000) state.money = 60000;
   if (state.activeSlot >= state.garage.length) state.activeSlot = state.garage.length > 0 ? 0 : -1;
   generateAuctions();
   initThree();
   renderAll();
-  mobRenderAll(); // sync mobile drawers
+  // Signal to CrazyGames that gameplay has started
   cgGameplayStart();
 }
-
-// ════════════════════════════════════════════════════════════
-//  MOBILE DRAWER SYSTEM
-// ════════════════════════════════════════════════════════════
-
-let _mobActiveDrawer = null;
-
-function mobOpenDrawer(name) {
-  // Close any open drawer first
-  if (_mobActiveDrawer) {
-    const prev = document.getElementById('mob-drawer-' + _mobActiveDrawer);
-    if (prev) prev.classList.remove('open');
-  }
-  // Sync content before opening
-  if (name === 'garage')  mobSyncGarage();
-  if (name === 'auction') mobSyncAuctions();
-  if (name === 'stats')   mobSyncStats();
-
-  const drawer = document.getElementById('mob-drawer-' + name);
-  if (!drawer) return;
-  drawer.classList.add('open');
-  document.getElementById('mobile-drawer-overlay').classList.add('open');
-  _mobActiveDrawer = name;
-
-  // Highlight active nav button
-  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
-  const navBtn = document.getElementById('nav-' + name);
-  if (navBtn) navBtn.classList.add('active');
-}
-
-function mobCloseDrawer() {
-  if (_mobActiveDrawer) {
-    const drawer = document.getElementById('mob-drawer-' + _mobActiveDrawer);
-    if (drawer) drawer.classList.remove('open');
-    _mobActiveDrawer = null;
-  }
-  document.getElementById('mobile-drawer-overlay').classList.remove('open');
-  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
-}
-
-// ── Sync garage drawer ───────────────────────────────────────
-function mobSyncGarage() {
-  // Stats strip
-  const s = state;
-  const mMoney = document.getElementById('mob-money');
-  const mLevel = document.getElementById('mob-level');
-  const mRep   = document.getElementById('mob-rep');
-  const mVibe  = document.getElementById('mob-vibe');
-  if (mMoney) mMoney.textContent = '₹' + Math.floor(s.money).toLocaleString('en-IN');
-  if (mLevel) mLevel.textContent = s.level;
-  if (mRep)   mRep.textContent   = s.rep;
-  // Vibe calc — reuse desktop logic
-  const vibeScore = calcVibeBonus ? calcVibeBonus() : 0;
-  if (mVibe) mVibe.textContent = Math.round(vibeScore * 100) + '%';
-
-  // Garage slots — clone desktop slot markup
-  const container = document.getElementById('mob-garage-slots');
-  if (!container) return;
-  container.innerHTML = '';
-  if (s.garage.length === 0) {
-    container.innerHTML = '<div style="font-size:.65rem;color:var(--text3);font-family:var(--ff-mono);padding:.5rem 0">No bikes yet — hit BUY to start</div>';
-  } else {
-    s.garage.forEach((slot, i) => {
-      const bd = BIKES.find(b => b.id === slot.bikeId) || {};
-      const condColor = slot.condition > 70 ? 'var(--green)' : slot.condition > 40 ? 'var(--amber)' : 'var(--red)';
-      const div = document.createElement('div');
-      div.className = 'slot' + (i === s.activeSlot ? ' active' : '');
-      div.onclick = () => { s.activeSlot = i; buildBikeModel(); renderAll(); mobSyncGarage(); };
-      div.innerHTML = `
-        <div class="slot-icon">${bd.icon || '🏍️'}</div>
-        <div class="slot-info">
-          <div class="slot-name">${bd.name || 'Unknown'}</div>
-          <div class="slot-sub">ENG ${slot.engine} · AER ${slot.aero} · ECU ${slot.ecu}</div>
-          <div class="slot-cond"><div class="slot-cond-fill" style="width:${slot.condition}%;background:${condColor}"></div></div>
-        </div>`;
-      container.appendChild(div);
-    });
-  }
-
-  // Module sliders
-  const active = s.garage[s.activeSlot];
-  const vals = active ? active : { engine:0, aero:0, ecu:0, condition:0 };
-  ['engine','aero','ecu'].forEach(m => {
-    const slider = document.getElementById('mob-mod-' + m);
-    const fill   = document.getElementById('mob-mod-' + m + '-fill');
-    const val    = document.getElementById('mob-mod-' + m + '-val');
-    if (slider) slider.value = vals[m] || 0;
-    if (fill)   fill.style.width = (vals[m] || 0) + '%';
-    if (val)    val.textContent  = vals[m] || 0;
-  });
-  const condFill = document.getElementById('mob-cond-fill');
-  const condPct  = document.getElementById('mob-cond-pct');
-  if (condFill) condFill.style.width = (vals.condition || 0) + '%';
-  if (condFill) condFill.style.background = vals.condition > 70 ? 'var(--green)' : vals.condition > 40 ? 'var(--amber)' : 'var(--red)';
-  if (condPct)  condPct.textContent = (vals.condition || 0) + '%';
-
-  // Phonk button
-  mobSyncPhonkBtn();
-}
-
-// updateModule mirror for mobile sliders
-function updateModuleMob(mod, rawVal) {
-  // delegate to the desktop updateModule which handles all logic
-  updateModule(mod, rawVal);
-  // then resync the desktop sliders in case they're visible
-  mobSyncGarage();
-}
-
-function mobSyncPhonkBtn() {
-  const btn = document.getElementById('mob-phonk-btn');
-  if (!btn) return;
-  const on = typeof phonkEnabled !== 'undefined' && phonkEnabled;
-  btn.textContent = on ? '🎵 PHONK ON' : '🎵 PHONK OFF';
-  btn.classList.toggle('phonk-active', on);
-}
-
-// ── Sync auction drawer ──────────────────────────────────────
-function mobSyncAuctions() {
-  const container = document.getElementById('mob-auction-list');
-  if (!container) return;
-  container.innerHTML = '';
-  state.auctions.forEach((a, idx) => {
-    const bd = BIKES.find(b => b.id === a.bikeId) || {};
-    const card = document.createElement('div');
-    card.className = 'auction-card' + (a.isDaily ? ' mythic' : '');
-    card.innerHTML = `
-      <div class="ac-header">
-        <span class="ac-name">${bd.icon || ''} ${bd.name || a.bikeId}</span>
-        <span class="ac-badge ${bd.rarity || 'common'}">${(bd.rarity || 'common').toUpperCase()}</span>
-      </div>
-      <div class="ac-price">₹${a.price.toLocaleString('en-IN')}</div>
-      <div class="ac-stats">
-        <span class="ac-stat">COND ${a.condition}%</span>
-        <span class="ac-stat">· ${bd.cc || '?'}cc</span>
-      </div>`;
-    card.onclick = () => { mobCloseDrawer(); openAuctionDetail(idx); };
-    container.appendChild(card);
-  });
-  if (state.auctions.length === 0) {
-    container.innerHTML = '<div style="font-size:.65rem;color:var(--text3);font-family:var(--ff-mono);padding:.5rem 0">No auctions — tap Refresh</div>';
-  }
-}
-
-// ── Sync stats drawer ────────────────────────────────────────
-function mobSyncStats() {
-  // Vibe grid
-  const mg = document.getElementById('mob-vibe-grid');
-  const dg = document.getElementById('vibe-grid');
-  if (mg && dg) mg.innerHTML = dg.innerHTML;
-  // Re-attach onclick handlers on cloned vibe opts
-  if (mg) {
-    mg.querySelectorAll('.vibe-opt').forEach(el => {
-      const cat = el.dataset.cat, val = el.dataset.val;
-      if (cat && val) el.onclick = () => { setVibe(cat, val); mobSyncStats(); };
-    });
-  }
-
-  // Sales log
-  const msl = document.getElementById('mob-sales-log');
-  const dsl = document.getElementById('sales-log');
-  if (msl && dsl) msl.innerHTML = dsl.innerHTML;
-
-  // Hall of fame
-  const mhw = document.getElementById('mob-hall-wrap');
-  const dhw = document.getElementById('hall-wrap');
-  if (mhw && dhw) mhw.innerHTML = dhw.innerHTML;
-}
-
-// ── Master mobile render — called after any state change ─────
-function mobRenderAll() {
-  if (_mobActiveDrawer === 'garage')  mobSyncGarage();
-  if (_mobActiveDrawer === 'auction') mobSyncAuctions();
-  if (_mobActiveDrawer === 'stats')   mobSyncStats();
-  // always keep money in garage drawer synced (stat strip)
-  const mMoney = document.getElementById('mob-money');
-  if (mMoney) mMoney.textContent = '₹' + Math.floor(state.money).toLocaleString('en-IN');
-}
-
-// Patch renderAll to also trigger mobile sync
-const _origRenderAll = typeof renderAll === 'function' ? renderAll : null;
-function renderAll() {
-  if (_origRenderAll) _origRenderAll();
-  mobRenderAll();
-}
-
-// ── Swipe-to-close on drawers ────────────────────────────────
-(function initSwipeClose() {
-  let startY = 0;
-  document.querySelectorAll('.mobile-drawer').forEach(drawer => {
-    drawer.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive:true });
-    drawer.addEventListener('touchend', e => {
-      const dy = e.changedTouches[0].clientY - startY;
-      if (dy > 60) mobCloseDrawer(); // swipe down 60px → close
-    }, { passive:true });
-  });
-})();
-
 </script>
 </body>
 </html>
