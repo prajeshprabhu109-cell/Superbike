@@ -129,11 +129,14 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .auction-card{padding:.45rem;border:1px solid rgba(0,229,255,.1);border-radius:var(--r);margin-bottom:5px;cursor:pointer;transition:all .2s;background:var(--hud)}
 .auction-card:hover{border-color:var(--hudb);background:var(--cyan3)}
 .auction-card.mythic{border-color:rgba(255,171,0,.4);background:var(--amber2);animation:mythic-glow 2s infinite}
+.auction-card.epic{border-color:rgba(168,85,247,.4);background:rgba(168,85,247,.08);animation:epic-glow 2s infinite}
+@keyframes epic-glow{0%,100%{box-shadow:none}50%{box-shadow:0 0 12px rgba(168,85,247,.35)}}
 @keyframes mythic-glow{0%,100%{box-shadow:none}50%{box-shadow:0 0 12px rgba(255,171,0,.3)}}
 .ac-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem}
 .ac-name{font-size:.68rem;font-weight:700;color:var(--text)}
 .ac-badge{font-size:.48rem;padding:1px 5px;border-radius:2px;font-family:var(--ff-mono);text-transform:uppercase}
 .ac-badge.mythic{background:rgba(255,171,0,.2);color:var(--amber)}
+.ac-badge.epic{background:rgba(168,85,247,.2);color:#a855f7}
 .ac-badge.rare{background:rgba(0,229,255,.1);color:var(--cyan)}
 .ac-badge.common{background:rgba(61,109,130,.15);color:var(--text3)}
 .ac-price{font-size:.62rem;font-family:var(--ff-mono);color:var(--amber)}
@@ -247,198 +250,6 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
    ONBOARDING SYSTEM
    ══════════════════════════════════════════════════════════ */
 
-/* ── Cinematic intro overlay ── */
-#ob-intro{
-  position:fixed;inset:0;z-index:2000;
-  background:var(--c0);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:0;overflow:hidden;
-}
-#ob-intro.hidden{display:none}
-
-/* scanline effect on intro */
-#ob-intro::after{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,229,255,0.03) 3px,rgba(0,229,255,0.03) 4px);
-  pointer-events:none;z-index:1;
-}
-
-.ob-intro-logo{
-  font-family:var(--ff-head);font-weight:900;font-style:italic;
-  font-size:clamp(2.2rem,8vw,5rem);
-  color:var(--cyan);letter-spacing:.12em;text-transform:uppercase;
-  text-shadow:0 0 60px rgba(0,229,255,.4),0 0 120px rgba(0,229,255,.15);
-  animation:ob-logo-in 1s cubic-bezier(.16,1,.3,1) both;
-  position:relative;z-index:2;
-}
-.ob-intro-logo span{color:var(--amber);text-shadow:0 0 60px rgba(255,171,0,.4)}
-@keyframes ob-logo-in{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
-
-.ob-intro-tagline{
-  font-family:var(--ff-mono);font-size:clamp(.55rem,.9vw,.75rem);
-  color:var(--text3);letter-spacing:.28em;text-transform:uppercase;
-  animation:ob-fade-in .8s .5s both;position:relative;z-index:2;margin-top:.5rem;
-}
-@keyframes ob-fade-in{from{opacity:0}to{opacity:1}}
-
-/* Horizontal glowing line divider */
-.ob-divider{
-  width:min(420px,80vw);height:1px;
-  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
-  margin:2rem 0;animation:ob-fade-in .6s .9s both;position:relative;z-index:2;
-}
-
-/* Core loop preview — 3 pillars */
-.ob-loop{
-  display:flex;align-items:center;gap:0;
-  animation:ob-fade-in .7s 1.1s both;position:relative;z-index:2;
-}
-.ob-pillar{
-  display:flex;flex-direction:column;align-items:center;gap:.5rem;
-  padding:1rem 1.4rem;
-  border:1px solid var(--hudb);border-radius:var(--r2);
-  background:var(--hud);
-  min-width:110px;text-align:center;
-}
-.ob-pillar-icon{font-size:1.8rem;line-height:1}
-.ob-pillar-label{
-  font-family:var(--ff-head);font-weight:900;font-style:italic;
-  font-size:.85rem;color:var(--cyan);letter-spacing:.06em;text-transform:uppercase;
-}
-.ob-pillar-sub{font-family:var(--ff-mono);font-size:.5rem;color:var(--text3);line-height:1.4}
-/* Arrow between pillars */
-.ob-arrow{
-  font-size:1.1rem;color:var(--amber);margin:0 .3rem;
-  text-shadow:0 0 10px var(--amber);flex-shrink:0;
-  animation:ob-arrow-pulse 1.2s 1.5s ease-in-out infinite alternate;
-}
-@keyframes ob-arrow-pulse{from{opacity:.5;transform:translateX(-3px)}to{opacity:1;transform:translateX(3px)}}
-
-/* Starting capital callout */
-.ob-capital{
-  font-family:var(--ff-mono);font-size:.7rem;color:var(--text2);
-  background:rgba(255,171,0,.07);border:1px solid rgba(255,171,0,.25);
-  border-radius:var(--r);padding:.45rem 1.1rem;
-  animation:ob-fade-in .7s 1.4s both;position:relative;z-index:2;margin-top:.5rem;
-}
-.ob-capital strong{color:var(--amber);font-size:.85rem}
-
-/* CTA button on intro */
-.ob-cta{
-  margin-top:1.2rem;
-  padding:.75rem 2.5rem;
-  font-family:var(--ff-head);font-weight:900;font-style:italic;
-  font-size:1rem;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--c0);background:var(--cyan);
-  border:none;border-radius:var(--r2);cursor:pointer;
-  box-shadow:0 0 30px rgba(0,229,255,.35);
-  transition:all .18s;
-  animation:ob-fade-in .7s 1.7s both;position:relative;z-index:2;
-}
-.ob-cta:hover{background:#fff;box-shadow:0 0 55px rgba(0,229,255,.6);transform:scale(1.04)}
-.ob-cta:active{transform:scale(.97)}
-
-/* ── Tutorial tooltip system ── */
-#ob-tooltip{
-  position:fixed;z-index:1500;
-  max-width:280px;width:max-content;
-  background:rgba(2,13,20,.97);
-  border:1px solid var(--cyan);border-radius:var(--r2);
-  padding:.85rem 1rem;
-  box-shadow:0 0 30px rgba(0,229,255,.2),0 8px 32px rgba(0,0,0,.6);
-  pointer-events:none;
-  opacity:0;transform:translateY(8px);
-  transition:opacity .25s,transform .25s;
-}
-#ob-tooltip.visible{opacity:1;transform:translateY(0);pointer-events:all}
-#ob-tooltip.hidden{display:none}
-
-.ob-tip-step{
-  font-family:var(--ff-mono);font-size:.45rem;color:var(--text3);
-  text-transform:uppercase;letter-spacing:.15em;margin-bottom:.35rem;
-}
-.ob-tip-title{
-  font-family:var(--ff-head);font-weight:900;font-style:italic;
-  font-size:.95rem;color:var(--cyan);margin-bottom:.3rem;
-  text-transform:uppercase;letter-spacing:.05em;
-}
-.ob-tip-body{
-  font-family:var(--ff-ui);font-size:.68rem;color:var(--text2);
-  line-height:1.5;margin-bottom:.6rem;
-}
-.ob-tip-actions{display:flex;gap:.4rem;align-items:center}
-.ob-tip-btn{
-  padding:.3rem .8rem;
-  font-family:var(--ff-ui);font-size:.62rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:.05em;
-  border-radius:var(--r);cursor:pointer;border:1px solid;
-  transition:all .15s;pointer-events:all;
-}
-.ob-tip-btn.primary{background:var(--cyan);border-color:var(--cyan);color:var(--c0)}
-.ob-tip-btn.primary:hover{background:#fff;border-color:#fff}
-.ob-tip-btn.skip{background:transparent;border-color:var(--text3);color:var(--text3)}
-.ob-tip-btn.skip:hover{border-color:var(--text2);color:var(--text2)}
-.ob-tip-dots{display:flex;gap:4px;margin-left:auto}
-.ob-dot{width:6px;height:6px;border-radius:50%;background:var(--c3);transition:background .2s}
-.ob-dot.active{background:var(--cyan)}
-
-/* Tooltip arrow pointer */
-#ob-tooltip::before{
-  content:'';position:absolute;
-  border:6px solid transparent;
-}
-#ob-tooltip.arrow-top::before{
-  top:-12px;left:24px;
-  border-bottom-color:var(--cyan);
-}
-#ob-tooltip.arrow-bottom::before{
-  bottom:-12px;left:24px;
-  border-top-color:var(--cyan);
-}
-#ob-tooltip.arrow-left::before{
-  left:-12px;top:20px;
-  border-right-color:var(--cyan);
-}
-#ob-tooltip.arrow-right::before{
-  right:-12px;top:20px;
-  border-left-color:var(--cyan);
-}
-
-/* ── Spotlight / highlight ring ── */
-#ob-spotlight{
-  position:fixed;z-index:1400;
-  border-radius:var(--r2);
-  box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72);
-  pointer-events:none;
-  transition:all .35s cubic-bezier(.4,0,.2,1);
-  opacity:0;
-}
-#ob-spotlight.visible{opacity:1}
-
-/* Goal ribbon — persistent top-of-screen prompt */
-#ob-goal{
-  position:fixed;top:52px;left:50%;transform:translateX(-50%);
-  z-index:1300;
-  background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.35);
-  border-radius:0 0 var(--r2) var(--r2);
-  padding:.3rem 1.2rem;
-  font-family:var(--ff-mono);font-size:.55rem;color:var(--cyan);
-  letter-spacing:.1em;text-transform:uppercase;
-  display:flex;align-items:center;gap:.5rem;
-  white-space:nowrap;pointer-events:none;
-  opacity:0;transition:opacity .3s;
-}
-#ob-goal.visible{opacity:1}
-#ob-goal-icon{font-size:.75rem;animation:ob-goal-bounce .8s ease-in-out infinite alternate}
-@keyframes ob-goal-bounce{from{transform:translateY(-1px)}to{transform:translateY(2px)}}
-
-/* Pulse ring on highlighted element */
-@keyframes ob-ring-pulse{
-  0%{box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72),0 0 0 6px rgba(0,229,255,.4)}
-  50%{box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72),0 0 0 12px rgba(0,229,255,.15)}
-  100%{box-shadow:0 0 0 3px var(--cyan),0 0 0 9999px rgba(0,5,8,.72),0 0 0 6px rgba(0,229,255,.4)}
-}
-#ob-spotlight.pulse{animation:ob-ring-pulse 1.6s ease-in-out infinite}
 
 /* ── DISABLE any fullscreen button this game might accidentally include ── */
 /* (CrazyGames supplies its own fullscreen button; a second one is banned)  */
@@ -461,64 +272,13 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
 <body>
 
 <!-- ══════════════════════════════════════════════════════════
-     ONBOARDING — CINEMATIC INTRO
      ══════════════════════════════════════════════════════════ -->
-<div id="ob-intro">
-  <div class="ob-intro-logo">AEVITH<span> MOTO</span></div>
-  <div class="ob-intro-tagline">Superbike Tycoon &mdash; Phonk Edition</div>
-  <div class="ob-divider"></div>
 
-  <!-- Core loop pillars -->
-  <div class="ob-loop">
-    <div class="ob-pillar">
-      <div class="ob-pillar-icon">🏍️</div>
-      <div class="ob-pillar-label">BUY</div>
-      <div class="ob-pillar-sub">Bid on wrecked<br>frames at auction</div>
-    </div>
-    <div class="ob-arrow">▶</div>
-    <div class="ob-pillar">
-      <div class="ob-pillar-icon">🔧</div>
-      <div class="ob-pillar-label">RESTORE</div>
-      <div class="ob-pillar-sub">Tune engine, aero<br>&amp; ECU modules</div>
-    </div>
-    <div class="ob-arrow">▶</div>
-    <div class="ob-pillar">
-      <div class="ob-pillar-icon">💰</div>
-      <div class="ob-pillar-label">SELL</div>
-      <div class="ob-pillar-sub">Private viewings<br>to the highest bidder</div>
-    </div>
-  </div>
 
-  <div class="ob-capital">
-    You start with <strong>₹60,000</strong> &mdash; enough to land your first frame.
-  </div>
 
-  <button class="ob-cta" onclick="startOnboarding()">START YOUR GARAGE ⚡</button>
-</div>
 
-<!-- ── Tutorial tooltip (positioned dynamically by JS) ── -->
-<div id="ob-tooltip" class="hidden">
-  <div class="ob-tip-step" id="ob-tip-step">STEP 1 / 5</div>
-  <div class="ob-tip-title" id="ob-tip-title">—</div>
-  <div class="ob-tip-body" id="ob-tip-body">—</div>
-  <div class="ob-tip-actions">
-    <button class="ob-tip-btn primary" onclick="obNext()">GOT IT →</button>
-    <button class="ob-tip-btn skip" onclick="obSkip()">SKIP TOUR</button>
-    <div class="ob-tip-dots" id="ob-tip-dots"></div>
-  </div>
-</div>
-
-<!-- ── Spotlight highlight ring ── -->
-<div id="ob-spotlight"></div>
-
-<!-- ── Persistent goal ribbon ── -->
-<div id="ob-goal">
-  <span id="ob-goal-icon">▼</span>
-  <span id="ob-goal-text">CLICK + BUY BIKE TO BEGIN</span>
-</div>
-
-<!-- BOOT SCREEN (legacy, now hidden — onboarding replaces it) -->
-<div id="start-overlay" style="display:none">
+<!-- BOOT SCREEN -->
+<div id="start-overlay">
   <h1>AEVITH<span style="color:var(--amber)"> MOTO</span></h1>
   <p>SUPERBIKE TYCOON &mdash; BUILD THE LOUDEST MACHINES ON THE PLANET</p>
   <button id="hold-start" onclick="cgLoadingFinished();bootGame()">ENTER<br>GARAGE</button>
@@ -869,12 +629,12 @@ let phonkEnabled = false;
 function togglePhonk() {
   phonkEnabled = AudioMgr.toggle();
   const btn = document.getElementById('phonk-toggle-btn');
-  btn.textContent = phonkEnabled ? '🎵 PHONK ON' : '🎵 PHONK OFF';
+  btn.textContent = phonkEnabled ? '🎵 SONG ON' : '🎵 SONG OFF';
   btn.classList.toggle('phonk-active', phonkEnabled);
   if (phonkEnabled) {
-    floatText('🔊 PHONK MODE ENGAGED', 'var(--amber)');
+    floatText('🔊 SONG MODE ENGAGED', 'var(--amber)');
   } else {
-    floatText('🔇 PHONK OFF', 'var(--text3)');
+    floatText('🔇 SONG OFF', 'var(--text3)');
     document.getElementById('phonk-visualizer').classList.remove('active');
   }
 }
@@ -916,10 +676,11 @@ AudioMgr.onBeat((energy) => {
 // ── Analytics helpers ────────────────────────────────────────
 function cgLoadingFinished() {
   try {
-    if (window.CrazyGames && window.CrazyGames.SDK) {
+    if (window._cgSDKReady && window.CrazyGames && window.CrazyGames.SDK &&
+        window.CrazyGames.SDK.game) {
       window.CrazyGames.SDK.game.loadingFinished();
     }
-  } catch(e) { console.warn('[CG SDK] loadingFinished failed:', e); }
+  } catch(e) { /* silent — not on CrazyGames domain */ }
 }
 
 function cgGameplayStart() {
@@ -1023,17 +784,22 @@ function watchAdDoubleSale() {
 // ════════════════════════════════════════════════════════════
 //  SAVE / CONSTANTS
 // ════════════════════════════════════════════════════════════
-const SAVE_KEY = 'aevith_moto_v3'; // bumped to clear old saves
+const SAVE_KEY = 'aevith_moto_v4'; // v4 — 8 bikes, unique IDs, enter garage fixed
 
-// ── BIKE DATABASE — 4 bikes, each mapped to a real .glb file ──
+// ── BIKE DATABASE — 8 bikes, each mapped to a real .glb file ──
 const BIKES = [
-  { id:'ninku',   name:'Ninja Kurosaki',    icon:'🟢', cc:296,  rarity:'common', basePrice:48000,    estSell:180000,   baseHP:39,  era:1, glb:'ninku.glb'  },
-  { id:'kawani',  name:'Kawasaki Anima',    icon:'🔵', cc:636,  rarity:'rare',   basePrice:195000,   estSell:620000,   baseHP:95,  era:1, glb:'kawani.glb' },
-  { id:'kawazx',  name:'Kawasaki ZX-10R',   icon:'⚡', cc:998,  rarity:'rare',   basePrice:480000,   estSell:1400000,  baseHP:210, era:2, glb:'kawazx.glb' },
-  { id:'duc',     name:'Ducati Phantoma',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:4000000,  baseHP:214, era:2, glb:'duc.glb'    },
-  { id:'duc',     name:'Yamaha',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:1200000,  baseHP:214, era:2, glb:'yam.glb'    },
-  { id:'duc',     name:'Portsen Phantoma',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:1000000,  baseHP:214, era:2, glb:'port.glb'    },
-  { id:'duc',     name:'Ducati Monster',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:800000,  baseHP:214, era:2, glb:'konda.glb'    },
+  // ERA 1 — COMMON
+  { id:'kin',      name:'Kinetic Wraith',   icon:'🔵', cc:249,  rarity:'common', basePrice:45000,   estSell:160000,   baseHP:32,  era:1, glb:'kin.glb'      },
+  { id:'chan',     name:'Chan-Sling V2',    icon:'🟢', cc:390,  rarity:'common', basePrice:68000,   estSell:220000,   baseHP:44,  era:1, glb:'chan.glb'     },
+  // ERA 1 — RARE
+  { id:'afri',    name:'Aevith Sahara-X',  icon:'🟠', cc:636,  rarity:'rare',   basePrice:185000,  estSell:580000,   baseHP:90,  era:1, glb:'afri.glb'    },
+  { id:'zak',     name:'Zakana Ronin',     icon:'🔴', cc:765,  rarity:'rare',   basePrice:260000,  estSell:820000,   baseHP:118, era:1, glb:'zak.glb'     },
+  { id:'port',    name:'Portalis GT',      icon:'⚪', cc:890,  rarity:'rare',   basePrice:380000,  estSell:1100000,  baseHP:148, era:2, glb:'port.glb'    },
+  // ERA 2 — EPIC
+  { id:'konda',   name:'Konda Velocity',   icon:'⚡', cc:998,  rarity:'epic',   basePrice:680000,  estSell:2200000,  baseHP:198, era:2, glb:'konda.glb'   },
+  { id:'yam',     name:'Aevith Revenant',  icon:'🟣', cc:1100, rarity:'epic',   basePrice:950000,  estSell:3200000,  baseHP:225, era:2, glb:'yam.glb'     },
+  // ERA 3 — MYTHIC
+  { id:'electric',name:'Aevith Volt-Core', icon:'🔷', cc:0,    rarity:'mythic', basePrice:2800000, estSell:9500000,  baseHP:380, era:3, glb:'electric.glb'},
 ];
 
 const SKILLS = [
@@ -1077,7 +843,7 @@ let state = {
   hallUnlocked: [],
   auctions: [],
   dailyClaimed: false,
-  onboarded: false,
+  started: true,
 };
 
 // ════════════════════════════════════════════════════════════
@@ -1207,7 +973,8 @@ function buildBikeModel() {
   const slot  = state.activeSlot >= 0 ? state.garage[state.activeSlot] : null;
   const bData = slot ? BIKES.find(b => b.id === slot.bikeId) : null;
   const isMythic = bData && bData.rarity === 'mythic';
-  const accHex   = isMythic ? 0xffab00 : 0x00e5ff;
+  const isEpic   = bData && bData.rarity === 'epic';
+  const accHex   = isMythic ? 0xffab00 : isEpic ? 0xa855f7 : 0x00e5ff;
 
   // ── If bike has a GLB file, load it ─────────────────────
   if (bData && bData.glb && window.THREE && THREE.GLTFLoader) {
@@ -1302,8 +1069,9 @@ function _makeCap(radius, length, capSegs, radSegs) {
 
 function _buildProceduralBike(slot, bData, accHex) {
   const isMythic = bData && bData.rarity === 'mythic';
+  const isEpic   = bData && bData.rarity === 'epic';
   const isRare   = bData && bData.rarity === 'rare';
-  const bodyHex  = isMythic ? 0x000a1a : isRare ? 0x1a0005 : 0x001408;
+  const bodyHex  = isMythic ? 0x000a1a : isEpic ? 0x0d0020 : isRare ? 0x1a0005 : 0x001408;
 
   const bodyMat = new THREE.MeshPhysicalMaterial({color:bodyHex,metalness:0.94,roughness:0.08,clearcoat:1,clearcoatRoughness:0.05,envMap:envMap,envMapIntensity:1.4});
   const accentMat = new THREE.MeshPhysicalMaterial({color:accHex,metalness:1,roughness:0.03,emissive:new THREE.Color(accHex),emissiveIntensity:BASE_EMISSION,envMap:envMap,envMapIntensity:1.8,clearcoat:1});
@@ -1491,7 +1259,7 @@ function renderAuctions() {
     const bd = BIKES.find(b => b.id === a.bikeId);
     if (!bd) return;
     const div = document.createElement('div');
-    div.className = 'auction-card' + (bd.rarity === 'mythic' ? ' mythic' : '');
+    div.className = 'auction-card' + (bd.rarity === 'mythic' ? ' mythic' : bd.rarity === 'epic' ? ' epic' : '');
     div.onclick = () => openAuctionDetail(i);
     div.innerHTML = `<div class="ac-header"><span class="ac-name">${bd.icon} ${bd.name}</span><span class="ac-badge ${bd.rarity}">${bd.rarity.toUpperCase()}</span></div><div class="ac-price">₹${a.price.toLocaleString('en-IN')}</div><div class="ac-stats"><span class="ac-stat">COND: ${a.condition}%</span><span class="ac-stat">· ${bd.cc}cc</span><span class="ac-stat">· EST ₹${Math.floor(bd.estSell / 100000)}L+</span></div>`;
     el.appendChild(div);
@@ -1562,7 +1330,14 @@ function selectSlot(i) {
 let currentAuctionIdx = -1;
 
 function generateAuctions() {
-  const pool = BIKES.slice(); // all 4 bikes always available
+  // Gate by era: era 1 always, era 2 from level 5, era 3 from level 12
+  const pool = BIKES.filter(b => {
+    if (b.era === 1) return true;
+    if (b.era === 2) return state.level >= 5;
+    if (b.era === 3) return state.level >= 12;
+    return false;
+  });
+  if (!pool.length) return;
   state.auctions = [];
   for (let i = 0; i < 6; i++) {
     const bd   = pool[Math.floor(Math.random() * pool.length)];
@@ -1589,12 +1364,11 @@ function openAuctionDetail(i) {
   document.getElementById('ma-engine').textContent = bd.baseHP + ' HP stock';
   document.getElementById('ma-sell').textContent   = '₹' + bd.estSell.toLocaleString('en-IN') + '+';
   document.getElementById('ma-rarity').textContent = bd.rarity.toUpperCase();
-  document.getElementById('ma-rarity').style.color = bd.rarity === 'mythic' ? 'var(--amber)' : bd.rarity === 'rare' ? 'var(--cyan)' : 'var(--text2)';
+  document.getElementById('ma-rarity').style.color = bd.rarity === 'mythic' ? 'var(--amber)' : bd.rarity === 'epic' ? '#a855f7' : bd.rarity === 'rare' ? 'var(--cyan)' : 'var(--text2)';
   const btn = document.getElementById('ma-buy-btn');
   btn.disabled = state.money < a.price;
   btn.textContent = state.money >= a.price ? 'BUY FRAME — ₹' + a.price.toLocaleString('en-IN') : 'INSUFFICIENT CAPITAL';
   openModal('modal-auction');
-  obTrigger('auctionDetail');
 }
 
 function confirmBuy() {
@@ -1611,7 +1385,6 @@ function confirmBuy() {
   buildBikeModel();
   renderAll();
   saveGame();
-  obTrigger('confirmBuy');
   // Trigger a midgame ad every N purchases (CrazyGames requirement)
   requestMidgameAd();
 }
@@ -1651,7 +1424,6 @@ function updateModule(mod, rawVal) {
   document.getElementById('mod-' + mod + '-val').textContent  = newVal;
   floatText('-₹' + cost.toLocaleString('en-IN'), 'var(--amber)');
   gainXP(10);
-  obTrigger('moduleUpgrade');
   updateHUDNodes();
   renderHUD();
   saveGame();
@@ -2018,233 +1790,22 @@ function floatText(msg, color) {
 //  ONBOARDING SYSTEM
 // ════════════════════════════════════════════════════════════
 
-/* Tutorial steps — each describes WHAT to highlight and WHAT to say.
-   target: CSS selector of element to spotlight (null = no spotlight)
-   arrow:  which side the tooltip arrow appears on
-   pos:    'auto' = JS figures out coords, or {top,left} px overrides
-   action: optional function name string that auto-advances after the
-           player performs that game action (e.g. confirmBuy triggers step 2)
-*/
-const OB_STEPS = [
-  {
-    title: '⚡ YOUR GARAGE AWAITS',
-    body:  'Welcome, Mechanic. Your goal: buy wrecked superbikes cheap, restore them to glory, and sell for massive profit. Let\'s start with your first acquisition.',
-    target: '#panel-right',
-    arrow: 'left',
-    goal: '▼ LOOK RIGHT — LIVE AUCTION FEED',
-  },
-  {
-    title: '🏍️ PICK YOUR FIRST BIKE',
-    body:  'The Auction Feed is live on the right. Click any bike to see its details. You have ₹60,000 — enough for a Yamaha R15M or Kawasaki Ninja 300 frame.',
-    target: '#auction-list',
-    arrow: 'left',
-    goal: '▶ CLICK A BIKE IN THE AUCTION FEED',
-    waitFor: 'auctionDetail',
-  },
-  {
-    title: '💸 BUY THE FRAME',
-    body:  'Review the lot details. Frame Condition shows how much restoration work lies ahead. Hit BUY FRAME to lock it in — this is where your empire begins.',
-    target: '#modal-auction .modal-actions',
-    arrow: 'top',
-    goal: '▶ PRESS "BUY FRAME" TO ACQUIRE',
-    waitFor: 'confirmBuy',
-  },
-  {
-    title: '🔧 RESTORE IT',
-    body:  'Your bike lands in the Garage (left panel). Use the Engine, Aero and ECU sliders to invest in upgrades — each point raises its resale value.',
-    target: '#panel-left',
-    arrow: 'right',
-    goal: '⬆ DRAG A SLIDER TO UPGRADE',
-    waitFor: 'moduleUpgrade',
-  },
-  {
-    title: '💰 SELL FOR PROFIT',
-    body:  'When your build is ready, hit PRIVATE VIEW to attract collectors. The higher your Build Score + Vibe, the bigger the bid. Accept to cash out!',
-    target: '#viewport-actions',
-    arrow: 'top',
-    goal: '▶ OPEN PRIVATE VIEW & SELL',
-  },
-];
 
-let obStep   = 0;
-let obActive = false;
 
-// ── Entry point called by the intro CTA ─────────────────────
-function startOnboarding() {
-  // Hide intro, show game
-  document.getElementById('ob-intro').classList.add('hidden');
-  cgLoadingFinished();
-  bootGame();
 
-  // If already played before (save exists) skip tour
-  if (state.onboarded) {
-    document.getElementById('ob-goal').classList.remove('visible');
-    return;
-  }
-
-  obActive = true;
-  obStep   = 0;
-  _buildDots();
-  _showStep(obStep);
-}
-
-// ── Build the dot indicators ─────────────────────────────────
-function _buildDots() {
-  const el = document.getElementById('ob-tip-dots');
-  el.innerHTML = '';
-  OB_STEPS.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'ob-dot' + (i === 0 ? ' active' : '');
-    d.id = 'ob-dot-' + i;
-    el.appendChild(d);
-  });
-}
 
 // ── Show a step ──────────────────────────────────────────────
-function _showStep(idx) {
-  if (idx >= OB_STEPS.length) { obFinish(); return; }
-  const step = OB_STEPS[idx];
-
-  // Update dot states
-  document.querySelectorAll('.ob-dot').forEach((d, i) => {
-    d.classList.toggle('active', i === idx);
-  });
-
-  // Fill tooltip content
-  document.getElementById('ob-tip-step').textContent = 'STEP ' + (idx + 1) + ' / ' + OB_STEPS.length;
-  document.getElementById('ob-tip-title').textContent = step.title;
-  document.getElementById('ob-tip-body').textContent  = step.body;
-
-  // Update goal ribbon
-  const goalEl = document.getElementById('ob-goal');
-  const goalTx = document.getElementById('ob-goal-text');
-  if (step.goal) {
-    goalTx.textContent = step.goal;
-    goalEl.classList.add('visible');
-  } else {
-    goalEl.classList.remove('visible');
-  }
-
-  // Spotlight target element
-  _spotlight(step.target);
-
-  // Position tooltip near target (or center-screen on no target)
-  setTimeout(() => _positionTooltip(step), 60);
-
-  // Show/hide skip on last step
-  const skipBtn = document.querySelector('.ob-tip-btn.skip');
-  skipBtn.style.display = idx >= OB_STEPS.length - 1 ? 'none' : '';
-
-  // Change last step CTA label
-  const nextBtn = document.querySelector('.ob-tip-btn.primary');
-  nextBtn.textContent = idx >= OB_STEPS.length - 1 ? 'START FLIPPING 🔥' : 'GOT IT →';
-
-  // Show tooltip
-  const tip = document.getElementById('ob-tooltip');
-  tip.classList.remove('hidden');
-  tip.className = 'visible arrow-' + (step.arrow || 'top');
-  tip.classList.remove('hidden');
-}
 
 // ── Spotlight an element ─────────────────────────────────────
-function _spotlight(selector) {
-  const sp = document.getElementById('ob-spotlight');
-  if (!selector) { sp.classList.remove('visible', 'pulse'); return; }
-
-  // If the target might be inside a modal that's open, or the panel itself
-  const el = document.querySelector(selector);
-  if (!el) { sp.classList.remove('visible', 'pulse'); return; }
-
-  const r   = el.getBoundingClientRect();
-  const pad = 6;
-  sp.style.top    = (r.top  - pad) + 'px';
-  sp.style.left   = (r.left - pad) + 'px';
-  sp.style.width  = (r.width  + pad * 2) + 'px';
-  sp.style.height = (r.height + pad * 2) + 'px';
-  sp.classList.add('visible', 'pulse');
-}
 
 // ── Position tooltip smartly ─────────────────────────────────
-function _positionTooltip(step) {
-  const tip = document.getElementById('ob-tooltip');
-  tip.style.top = '';tip.style.left = '';tip.style.right = '';tip.style.bottom = '';
-
-  const el = step.target ? document.querySelector(step.target) : null;
-  const tW = tip.offsetWidth  || 280;
-  const tH = tip.offsetHeight || 180;
-  const vW = window.innerWidth;
-  const vH = window.innerHeight;
-
-  if (!el) {
-    // Centre screen
-    tip.style.top  = ((vH - tH) / 2) + 'px';
-    tip.style.left = ((vW - tW) / 2) + 'px';
-    return;
-  }
-
-  const r = el.getBoundingClientRect();
-  const arrow = step.arrow || 'top';
-  const gap = 18;
-
-  if (arrow === 'left') {
-    // Tooltip to the RIGHT of the target
-    tip.style.left = (r.right + gap) + 'px';
-    tip.style.top  = Math.min(r.top, vH - tH - 12) + 'px';
-  } else if (arrow === 'right') {
-    // Tooltip to the LEFT of the target
-    tip.style.left = Math.max(8, r.left - tW - gap) + 'px';
-    tip.style.top  = Math.min(r.top, vH - tH - 12) + 'px';
-  } else if (arrow === 'top') {
-    // Tooltip BELOW the target
-    tip.style.top  = (r.bottom + gap) + 'px';
-    tip.style.left = Math.min(r.left, vW - tW - 12) + 'px';
-  } else {
-    // Tooltip ABOVE the target
-    tip.style.top  = (r.top - tH - gap) + 'px';
-    tip.style.left = Math.min(r.left, vW - tW - 12) + 'px';
-  }
-}
 
 // ── Player presses GOT IT ────────────────────────────────────
-function obNext() {
-  obStep++;
-  if (obStep >= OB_STEPS.length) { obFinish(); return; }
-  _showStep(obStep);
-}
 
 // ── Skip entire tour ─────────────────────────────────────────
-function obSkip() {
-  obFinish();
-}
 
-// ── Finish onboarding ────────────────────────────────────────
-function obFinish() {
-  obActive = false;
-  document.getElementById('ob-tooltip').classList.add('hidden');
-  document.getElementById('ob-tooltip').classList.remove('visible');
-  document.getElementById('ob-spotlight').classList.remove('visible','pulse');
-  document.getElementById('ob-goal').classList.remove('visible');
-  state.onboarded = true;
-  saveGame();
-  floatText('🔥 LET\'S BUILD AN EMPIRE!', 'var(--amber)');
-}
 
-// ── Hook: called by game actions to auto-advance ─────────────
-function obTrigger(action) {
-  if (!obActive) return;
-  const step = OB_STEPS[obStep];
-  if (step && step.waitFor === action) {
-    // Re-spotlight new target & advance after brief delay
-    setTimeout(() => { obStep++; _showStep(obStep); }, 420);
-  }
-}
 
-// ── Re-position spotlight on window resize ───────────────────
-window.addEventListener('resize', () => {
-  if (!obActive) return;
-  const step = OB_STEPS[obStep];
-  if (step) { _spotlight(step.target); _positionTooltip(step); }
-});
 
 
 function saveGame() {
@@ -2258,7 +1819,7 @@ function loadGame() {
     const s = localStorage.getItem(SAVE_KEY);
     if (s) Object.assign(state, JSON.parse(s));
   } catch(e) {}
-  if (!state.onboarded || state.money <= 0) state.money = 60000;
+  if (!state.money || state.money <= 0) state.money = 60000;
 }
 
 // ── PASSIVE INCOME ───────────────────────────────────────────
@@ -2278,12 +1839,11 @@ setInterval(() => {
 
 // ── BOOT ─────────────────────────────────────────────────────
 function bootGame() {
-  // start-overlay is now permanently hidden (onboarding replaced it)
   document.getElementById('start-overlay').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   loadGame();
   // Ensure fresh-start money is always 60k (not overwritten by old save with 50k)
-  if (!state.onboarded && state.money < 60000) state.money = 60000;
+  if (state.money < 60000) state.money = 60000;
   if (state.activeSlot >= state.garage.length) state.activeSlot = state.garage.length > 0 ? 0 : -1;
   generateAuctions();
   initThree();
