@@ -753,7 +753,7 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
 // ════════════════════════════════════════════════════════════
 
 // ════════════════════════════════════════════════════════════
-//  AUDIO MANAGER — sound.mp4 + Web Audio beat detection
+//  AUDIO MANAGER — song.mp4 + Web Audio beat detection
 // ════════════════════════════════════════════════════════════
 
 const AudioMgr = (() => {
@@ -764,7 +764,7 @@ const AudioMgr = (() => {
 
   // Hidden <audio> element for the MP4 track
   const audio = document.createElement('audio');
-  audio.src    = './sound.mp4';
+  audio.src    = './song.mp4';
   audio.loop   = true;
   audio.preload = 'auto';
   audio.volume = 0.7;
@@ -1031,6 +1031,9 @@ const BIKES = [
   { id:'kawani',  name:'Kawasaki Anima',    icon:'🔵', cc:636,  rarity:'rare',   basePrice:195000,   estSell:620000,   baseHP:95,  era:1, glb:'kawani.glb' },
   { id:'kawazx',  name:'Kawasaki ZX-10R',   icon:'⚡', cc:998,  rarity:'rare',   basePrice:480000,   estSell:1400000,  baseHP:210, era:2, glb:'kawazx.glb' },
   { id:'duc',     name:'Ducati Phantoma',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:4000000,  baseHP:214, era:2, glb:'duc.glb'    },
+  { id:'duc',     name:'Yamaha',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:1200000,  baseHP:214, era:2, glb:'yam.glb'    },
+  { id:'duc',     name:'Portsen Phantoma',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:1000000,  baseHP:214, era:2, glb:'port.glb'    },
+  { id:'duc',     name:'Ducati Monster',   icon:'🔴', cc:1103, rarity:'mythic', basePrice:1200000,  estSell:800000,  baseHP:214, era:2, glb:'konda.glb'    },
 ];
 
 const SKILLS = [
