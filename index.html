@@ -4,18 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AEVITH MOTO | Superbike Tycoon</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏍️</text></svg>">
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
 window._cgSDKReady = false;
 window.addEventListener('load', async () => {
   const h = location.hostname;
-  if (location.protocol === 'file:' || !h || h === 'localhost' || h === '127.0.0.1') return;
+  const isLocal = location.protocol === 'file:' || !h
+    || h === 'localhost' || h === '127.0.0.1'
+    || h.startsWith('192.168') || h.startsWith('10.');
+  if (isLocal) return; // completely silent on local dev
   try {
     if (window.CrazyGames && window.CrazyGames.SDK) {
       await window.CrazyGames.SDK.init();
       window._cgSDKReady = true;
-      if (typeof window.CrazyGames.SDK.game.sdkGameLoadingStart === 'function')
-        window.CrazyGames.SDK.game.sdkGameLoadingStart();
+      const g = window.CrazyGames.SDK.game;
+      if (g && typeof g.sdkGameLoadingStart === 'function') g.sdkGameLoadingStart();
+      else if (g && typeof g.loadingStart === 'function')   g.loadingStart();
     }
   } catch(e) {}
 });
@@ -254,18 +259,147 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
 /* ── DISABLE any fullscreen button this game might accidentally include ── */
 /* (CrazyGames supplies its own fullscreen button; a second one is banned)  */
 #btn-fullscreen{display:none!important}
-@media(max-width:900px){
-  #app{grid-template-columns:1fr;grid-template-rows:48px 1fr auto}
+/* ══════════════════════════════════════════════════════════
+   MOBILE-FIRST RESPONSIVE SYSTEM
+   ══════════════════════════════════════════════════════════ */
+
+/* ── DESKTOP (901px+) keep original 3-col layout ─────── */
+@media(min-width:901px){
+  #app{grid-template-columns:260px 1fr 240px;grid-template-rows:48px 1fr 140px}
+  #panel-left,#panel-right{display:flex}
+  #mob-nav,#mob-overlay,.mob-drawer{display:none!important}
+  #bottom-bar{display:grid;grid-template-columns:1fr 1fr 1fr}
+}
+
+/* ── TABLET (601–900px) ───────────────────────────────── */
+@media(min-width:601px) and (max-width:900px){
+  #app{grid-template-columns:1fr;grid-template-rows:44px 1fr auto}
   #panel-left,#panel-right{display:none}
+  #mob-nav{display:flex}
   #bottom-bar{grid-template-columns:1fr;height:auto}
   .bottom-pane+.bottom-pane{border-left:none;border-top:1px solid rgba(0,229,255,.07)}
   #hall-wrap{height:60px}
   #sales-log{height:60px}
+  #viewport-actions{gap:.3rem;padding:.3rem .4rem calc(.3rem + 36px);flex-wrap:wrap;justify-content:center}
+  .action-node{padding:.28rem .5rem;font-size:.56rem}
 }
+
+/* ── MOBILE (≤600px) ──────────────────────────────────── */
 @media(max-width:600px){
-  .hud-stat{min-width:55px}
-  .hud-stat .val{font-size:.7rem}
-  .hud-logo{font-size:.9rem}
+  html,body{font-size:15px}
+  #app{
+    grid-template-columns:1fr;
+    grid-template-rows:44px 1fr 54px;
+    height:100dvh;gap:0;
+  }
+  #panel-left,#panel-right,#bottom-bar{display:none}
+  #mob-nav{display:flex}
+
+  /* HUD — show only money on mobile */
+  #hud-top{padding:0 .5rem;gap:.3rem}
+  .hud-logo{font-size:.78rem;letter-spacing:.08em}
+  .hud-stat{display:none}
+  #hud-stat-money{display:flex!important;min-width:70px}
+  #save-flash{display:none}
+  .hud-btn{padding:.2rem .38rem;font-size:.52rem}
+  #hud-btn-daily,#hud-btn-dyno{display:none}
+
+  /* 3D viewport fills middle row */
+  #viewport-wrap{grid-row:2;grid-column:1;height:100%}
+
+  /* Action buttons floating above visualizer */
+  #viewport-actions{
+    position:absolute;bottom:0;left:0;right:0;
+    padding:.35rem .4rem calc(.35rem + 36px);
+    gap:.25rem;flex-wrap:wrap;justify-content:center;
+    background:linear-gradient(transparent,rgba(0,5,8,.97));
+  }
+  .action-node{padding:.3rem .55rem;font-size:.58rem;min-height:32px}
+
+  /* Modals become bottom sheets */
+  .modal-backdrop{align-items:flex-end}
+  .modal-box{
+    max-width:100vw;width:100vw;
+    border-radius:16px 16px 0 0;
+    position:fixed;bottom:0;left:0;right:0;
+    margin:0;padding:1rem;
+    max-height:88dvh;overflow-y:auto;
+  }
+}
+
+/* ── MOBILE BOTTOM NAV ────────────────────────────────── */
+#mob-nav{
+  grid-row:3;grid-column:1;
+  background:rgba(0,5,8,.98);
+  border-top:1px solid var(--hudb);
+  z-index:300;
+  /* hidden by default on desktop, shown via media query above */
+  display:none;
+  align-items:stretch;
+}
+.mob-tab{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;
+  border:none;background:none;
+  color:var(--text3);cursor:pointer;
+  font-family:var(--ff-mono);font-size:.42rem;
+  letter-spacing:.05em;text-transform:uppercase;
+  transition:color .15s;
+  -webkit-tap-highlight-color:transparent;
+  padding:.28rem 0;
+}
+.mob-tab .ti{font-size:1rem;line-height:1}
+.mob-tab.on,.mob-tab:active{color:var(--cyan)}
+.mob-tab.amber-t.on,.mob-tab.amber-t:active{color:var(--amber)}
+
+/* ── MOBILE DRAWER SYSTEM ─────────────────────────────── */
+#mob-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,5,8,.72);
+  z-index:400;opacity:0;pointer-events:none;
+  transition:opacity .22s;display:none;
+}
+#mob-overlay.on{opacity:1;pointer-events:all;display:block}
+
+.mob-drawer{
+  position:fixed;bottom:0;left:0;right:0;
+  z-index:410;
+  background:var(--c1);
+  border-top:1px solid var(--hudb);
+  border-radius:16px 16px 0 0;
+  max-height:80dvh;overflow-y:auto;
+  transform:translateY(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  -webkit-overflow-scrolling:touch;
+  display:none;
+}
+.mob-drawer.on{transform:translateY(0);display:block}
+.mob-handle{width:36px;height:4px;background:var(--text3);border-radius:2px;margin:.65rem auto .35rem}
+.mob-dtitle{
+  font-family:var(--ff-head);font-weight:900;font-style:italic;
+  font-size:.95rem;color:var(--cyan);text-transform:uppercase;
+  letter-spacing:.08em;padding:.1rem 1rem .55rem;
+  border-bottom:1px solid rgba(0,229,255,.08);
+}
+.mob-dbody{padding:.6rem .85rem 2rem}
+.mob-stat-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.75rem;
+}
+.mob-sc{
+  background:var(--hud);border:1px solid var(--hudb);
+  border-radius:var(--r2);padding:.5rem .65rem;text-align:center;
+}
+.mob-sc-label{font-size:.46rem;font-family:var(--ff-mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
+.mob-sc-val{font-family:var(--ff-mono);font-size:1rem;color:var(--cyan);font-weight:700;margin-top:2px}
+.mob-sc-val.gold{color:var(--amber)}
+.mob-sc-val.green{color:var(--green)}
+
+/* touch improvements */
+@media(hover:none) and (pointer:coarse){
+  button,.hud-btn,.action-node,.slot,.auction-card,.vibe-opt{min-height:36px}
+  *{touch-action:manipulation}
+  #app,#mob-nav,.mob-drawer{user-select:none;-webkit-user-select:none}
+  input[type=range].hud-slider::-webkit-slider-thumb{width:22px;height:22px}
 }
 </style>
 </head>
@@ -292,7 +426,7 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
   <div id="hud-top">
     <div class="hud-logo" id="hud-logo">AEVITH<span>MOTO</span></div>
     <div class="hud-sep"></div>
-    <div class="hud-stat">
+    <div class="hud-stat" id="hud-stat-money">
       <label>Capital</label>
       <div class="val gold" id="hud-money">&#8377;0</div>
     </div>
@@ -310,8 +444,8 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
       <div class="val green" id="hud-vibe">0%</div>
     </div>
     <div class="hud-sep"></div>
-    <button class="hud-btn amber" onclick="openDailyAuction()">&#9889; DAILY MYTHIC</button>
-    <button class="hud-btn" onclick="openDyno()">DYNO RUN</button>
+    <button class="hud-btn amber" id="hud-btn-daily" onclick="openDailyAuction()">&#9889; DAILY MYTHIC</button>
+    <button class="hud-btn" id="hud-btn-dyno" onclick="openDyno()">DYNO RUN</button>
     <button class="hud-btn" onclick="openAuction()">+ BUY BIKE</button>
     <!-- PHONK CONTROL -->
     <button class="hud-btn amber" id="phonk-toggle-btn" onclick="togglePhonk()">&#127925; PHONK OFF</button>
@@ -408,6 +542,89 @@ input[type=range].hud-slider::-webkit-slider-thumb:hover{transform:scale(1.25)}
     </div>
   </div>
 
+  <!-- ── MOBILE BOTTOM NAV ── -->
+  <nav id="mob-nav">
+    <button class="mob-tab" onclick="mobOpen('garage')"><span class="ti">🔧</span>GARAGE</button>
+    <button class="mob-tab amber-t" onclick="mobOpen('auction')"><span class="ti">🏍️</span>BUY</button>
+    <button class="mob-tab amber-t" onclick="openDailyAuction()"><span class="ti">⚡</span>DAILY</button>
+    <button class="mob-tab" onclick="openDyno()"><span class="ti">📊</span>DYNO</button>
+    <button class="mob-tab" onclick="mobOpen('stats')"><span class="ti">📈</span>STATS</button>
+  </nav>
+
+</div><!-- /#app -->
+
+<!-- ── MOBILE OVERLAY ── -->
+<div id="mob-overlay" onclick="mobClose()"></div>
+
+<!-- ── GARAGE DRAWER ── -->
+<div class="mob-drawer" id="mob-drawer-garage">
+  <div class="mob-handle"></div>
+  <div class="mob-dtitle">🔧 GARAGE</div>
+  <div class="mob-dbody">
+    <div class="mob-stat-row">
+      <div class="mob-sc"><div class="mob-sc-label">Capital</div><div class="mob-sc-val gold" id="mob-money">₹0</div></div>
+      <div class="mob-sc"><div class="mob-sc-label">Level</div><div class="mob-sc-val" id="mob-level">1</div></div>
+      <div class="mob-sc"><div class="mob-sc-label">Rep</div><div class="mob-sc-val" id="mob-rep">0</div></div>
+      <div class="mob-sc"><div class="mob-sc-label">Vibe</div><div class="mob-sc-val green" id="mob-vibe">0%</div></div>
+    </div>
+    <div class="p-section-title" style="margin-bottom:.45rem">Bikes in Bay</div>
+    <div id="mob-garage-slots" style="display:flex;flex-direction:column;gap:6px;margin-bottom:.75rem"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.85rem">
+      <button class="action-node" style="justify-content:center" onclick="openAuction();mobClose()">+ ACQUIRE</button>
+      <button class="action-node amber" style="justify-content:center" onclick="repairBike(10)">REPAIR</button>
+      <button class="action-node" style="justify-content:center;color:var(--red);border-color:rgba(255,23,68,.3)" onclick="sellCurrentBike()">SELL</button>
+      <button class="action-node amber" style="justify-content:center" onclick="openPrivateViewing();mobClose()">👁 PRIVATE VIEW</button>
+    </div>
+    <div class="p-section-title" style="margin-bottom:.45rem">Restoration Modules</div>
+    <div style="margin-bottom:.55rem">
+      <div class="module-name">Engine Core <span id="mob-eng-val">0</span></div>
+      <div class="slider-track"><div class="slider-fill" id="mob-eng-fill" style="width:0%"></div>
+        <input type="range" class="hud-slider" id="mob-eng" min="0" max="100" value="0" oninput="updateModule('engine',this.value);mobSyncGarage()"></div>
+    </div>
+    <div style="margin-bottom:.55rem">
+      <div class="module-name">Aero Fairings <span id="mob-aero-val">0</span></div>
+      <div class="slider-track"><div class="slider-fill" id="mob-aero-fill" style="width:0%"></div>
+        <input type="range" class="hud-slider" id="mob-aero" min="0" max="100" value="0" oninput="updateModule('aero',this.value);mobSyncGarage()"></div>
+    </div>
+    <div style="margin-bottom:.55rem">
+      <div class="module-name">ECU Tuning <span id="mob-ecu-val">0</span></div>
+      <div class="slider-track"><div class="slider-fill" id="mob-ecu-fill" style="width:0%"></div>
+        <input type="range" class="hud-slider" id="mob-ecu" min="0" max="100" value="0" oninput="updateModule('ecu',this.value);mobSyncGarage()"></div>
+    </div>
+    <div class="cond-display" style="margin:.35rem 0 .75rem">
+      <span style="font-size:.58rem;font-family:var(--ff-mono);color:var(--text3);width:55px;flex-shrink:0">Condition</span>
+      <div class="cond-bar"><div class="cond-bar-fill" id="mob-cond-fill" style="width:0%"></div></div>
+      <span class="cond-pct" id="mob-cond-pct">0%</span>
+    </div>
+    <button class="action-node green" style="width:100%;justify-content:center" onclick="openFirstStart()">🔥 FIRST START</button>
+    <div style="margin-top:.65rem">
+      <button class="hud-btn amber" id="mob-phonk-btn" style="width:100%;padding:.5rem;font-size:.68rem" onclick="togglePhonk();document.getElementById('mob-phonk-btn').textContent=phonkEnabled?'🎵 PHONK ON':'🎵 PHONK OFF'">🎵 PHONK OFF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUCTION DRAWER ── -->
+<div class="mob-drawer" id="mob-drawer-auction">
+  <div class="mob-handle"></div>
+  <div class="mob-dtitle">🏍️ LIVE AUCTION</div>
+  <div class="mob-dbody">
+    <button class="action-node" style="width:100%;justify-content:center;margin-bottom:.65rem" onclick="generateAuctions();renderAuctions();mobSyncAuction()">⟳ REFRESH</button>
+    <div id="mob-auction-list"></div>
+  </div>
+</div>
+
+<!-- ── STATS DRAWER ── -->
+<div class="mob-drawer" id="mob-drawer-stats">
+  <div class="mob-handle"></div>
+  <div class="mob-dtitle">📈 STATS &amp; SHOWROOM</div>
+  <div class="mob-dbody">
+    <div class="p-section-title" style="margin-bottom:.5rem">Showroom Vibe</div>
+    <div id="mob-vibe-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:.85rem"></div>
+    <div class="p-section-title" style="margin-bottom:.45rem">Sales Log</div>
+    <div id="mob-sales-log" style="margin-bottom:.85rem"></div>
+    <div class="p-section-title" style="margin-bottom:.45rem">Hall of Fame</div>
+    <div id="mob-hall-wrap" style="display:flex;gap:4px;overflow-x:auto;padding:.2rem 0"></div>
+  </div>
 </div>
 
 <!-- MODALS -->
@@ -674,29 +891,22 @@ AudioMgr.onBeat((energy) => {
 // ════════════════════════════════════════════════════════════
 
 // ── Analytics helpers ────────────────────────────────────────
+function _cgGame() {
+  return (window._cgSDKReady && window.CrazyGames && window.CrazyGames.SDK)
+    ? window.CrazyGames.SDK.game : null;
+}
 function cgLoadingFinished() {
   try {
-    if (window._cgSDKReady && window.CrazyGames && window.CrazyGames.SDK &&
-        window.CrazyGames.SDK.game) {
-      window.CrazyGames.SDK.game.loadingFinished();
-    }
-  } catch(e) { /* silent — not on CrazyGames domain */ }
+    const g = _cgGame(); if (!g) return;
+    if (typeof g.sdkGameLoadingStop === 'function') g.sdkGameLoadingStop();
+    else if (typeof g.loadingFinished === 'function') g.loadingFinished();
+  } catch(e) {}
 }
-
 function cgGameplayStart() {
-  try {
-    if (window.CrazyGames && window.CrazyGames.SDK) {
-      window.CrazyGames.SDK.game.gameplayStart();
-    }
-  } catch(e) {}
+  try { const g = _cgGame(); if (g && typeof g.gameplayStart === 'function') g.gameplayStart(); } catch(e) {}
 }
-
 function cgGameplayStop() {
-  try {
-    if (window.CrazyGames && window.CrazyGames.SDK) {
-      window.CrazyGames.SDK.game.gameplayStop();
-    }
-  } catch(e) {}
+  try { const g = _cgGame(); if (g && typeof g.gameplayStop === 'function') g.gameplayStop(); } catch(e) {}
 }
 
 // ── Ad state tracking ────────────────────────────────────────
@@ -732,7 +942,7 @@ function requestMidgameAd() {
   _bikePurchasesSinceLastAd++;
   if (_bikePurchasesSinceLastAd < MIDGAME_AD_EVERY_N_PURCHASES) return;
   _bikePurchasesSinceLastAd = 0;
-  if (!window.CrazyGames || !window.CrazyGames.SDK) return;
+  if (!window._cgSDKReady || !window.CrazyGames || !window.CrazyGames.SDK) return;
   _adPreRoll();
   window.CrazyGames.SDK.ad.requestAd('midgame', {
     adStarted:  () => {},
@@ -747,8 +957,7 @@ let _rewardedAdPending = false;
 function watchAdDoubleSale() {
   if (_adInProgress || _rewardedAdPending) return;
   if (!window._pendingBid) { floatText('NO PENDING BID', 'var(--red)'); return; }
-  if (!window.CrazyGames || !window.CrazyGames.SDK) {
-    // Graceful fallback in local/dev environments
+  if (!window._cgSDKReady || !window.CrazyGames || !window.CrazyGames.SDK) {
     floatText('ADS NOT AVAILABLE', 'var(--text3)');
     return;
   }
@@ -979,7 +1188,17 @@ function buildBikeModel() {
   const accHex   = isMythic ? 0xffab00 : isEpic ? 0xa855f7 : 0x00e5ff;
 
   // ── If bike has a GLB file, load it ─────────────────────
+  // ⚠️  GLB files must sit in the SAME folder as index.html
+  //     e.g.  /superbike/duc.glb  alongside  /superbike/index.html
   if (bData && bData.glb && window.THREE && THREE.GLTFLoader) {
+    // Show a "loading" placeholder while GLB fetches
+    const loadGeo = new THREE.TorusGeometry(0.6, 0.08, 8, 32);
+    const loadMat = new THREE.MeshBasicMaterial({ color: accHex, wireframe: true });
+    const loadMesh = new THREE.Mesh(loadGeo, loadMat);
+    loadMesh.position.y = 0.5;
+    bikeGroup.add(loadMesh);
+    scene.add(bikeGroup);
+
     const loader = new THREE.GLTFLoader();
     loader.load(
       './' + bData.glb,
@@ -1283,6 +1502,7 @@ function renderVibeGrid() {
     const active = Object.values(state.vibes).includes(v.id);
     const div = document.createElement('div');
     div.className = 'vibe-opt' + (active ? ' active' : '') + (active && v.isPhonk ? ' phonk-vibe' : '');
+    div.dataset.vid = v.id;
     div.onclick = () => setVibe(v);
     div.innerHTML = `<span class="vo-icon">${v.icon}</span>${v.name}`;
     el.appendChild(div);
@@ -1847,7 +2067,112 @@ setInterval(() => {
   if (state.auctions.length < 3) { generateAuctions(); renderAuctions(); }
 }, 35000);
 
-// ── BOOT ─────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  MOBILE DRAWER SYSTEM
+// ════════════════════════════════════════════════════════════
+let _mobOpen = null;
+
+function mobOpen(name) {
+  if (_mobOpen) {
+    document.getElementById('mob-drawer-' + _mobOpen).classList.remove('on');
+    document.querySelectorAll('.mob-tab').forEach(b => b.classList.remove('on'));
+  }
+  if (name === 'garage')  mobSyncGarage();
+  if (name === 'auction') mobSyncAuction();
+  if (name === 'stats')   mobSyncStats();
+  document.getElementById('mob-drawer-' + name).classList.add('on');
+  document.getElementById('mob-overlay').classList.add('on');
+  _mobOpen = name;
+  // highlight nav tab
+  const tabs = ['garage','auction','stats'];
+  tabs.forEach((t,i) => { if(t===name) document.querySelectorAll('.mob-tab')[i]?.classList.add('on'); });
+}
+
+function mobClose() {
+  if (_mobOpen) {
+    document.getElementById('mob-drawer-' + _mobOpen).classList.remove('on');
+    _mobOpen = null;
+  }
+  document.getElementById('mob-overlay').classList.remove('on');
+  document.querySelectorAll('.mob-tab').forEach(b => b.classList.remove('on'));
+}
+
+function mobSyncGarage() {
+  // stats strip
+  const el = (id) => document.getElementById(id);
+  el('mob-money') && (el('mob-money').textContent = '₹' + Math.floor(state.money).toLocaleString('en-IN'));
+  el('mob-level') && (el('mob-level').textContent = state.level);
+  el('mob-rep')   && (el('mob-rep').textContent   = state.rep);
+  el('mob-vibe')  && (el('mob-vibe').textContent  = calcVibe() + '%');
+
+  // slots
+  const sc = el('mob-garage-slots'); if (!sc) return;
+  sc.innerHTML = '';
+  if (!state.garage.length) {
+    sc.innerHTML = '<div style="font-size:.62rem;color:var(--text3);font-family:var(--ff-mono);padding:.3rem 0">GARAGE EMPTY — BUY A BIKE</div>';
+  } else {
+    state.garage.forEach((slot, i) => {
+      const bd = BIKES.find(b => b.id === slot.bikeId) || {};
+      const cc = slot.condition > 70 ? 'var(--green)' : slot.condition > 40 ? 'var(--amber)' : 'var(--red)';
+      const d = document.createElement('div');
+      d.className = 'slot' + (i === state.activeSlot ? ' active' : '');
+      d.onclick = () => { selectSlot(i); mobSyncGarage(); };
+      d.innerHTML = `<div class="slot-icon">${bd.icon||'🏍️'}</div><div class="slot-info"><div class="slot-name">${bd.name||'?'}</div><div class="slot-sub">${bd.cc||'?'}cc · ${(bd.rarity||'').toUpperCase()}</div><div class="slot-cond"><div class="slot-cond-fill" style="width:${slot.condition}%;background:${cc}"></div></div></div>`;
+      sc.appendChild(d);
+    });
+  }
+  // modules
+  const active = state.garage[state.activeSlot] || {engine:0,aero:0,ecu:0,condition:0};
+  ['eng','aero','ecu'].forEach(k => {
+    const key = k === 'eng' ? 'engine' : k;
+    const inp = el('mob-'+k), fill = el('mob-'+k+'-fill'), val = el('mob-'+k+'-val');
+    if(inp) inp.value = active[key]||0;
+    if(fill) fill.style.width = (active[key]||0)+'%';
+    if(val)  val.textContent  = active[key]||0;
+  });
+  const cf = el('mob-cond-fill'), cp = el('mob-cond-pct');
+  const cond = active.condition||0;
+  if(cf){ cf.style.width=cond+'%'; cf.style.background=cond>70?'var(--green)':cond>40?'var(--amber)':'var(--red)'; }
+  if(cp) cp.textContent = cond+'%';
+}
+
+function mobSyncAuction() {
+  const el = document.getElementById('mob-auction-list'); if (!el) return;
+  el.innerHTML = '';
+  state.auctions.forEach((a, i) => {
+    const bd = BIKES.find(b => b.id === a.bikeId) || {};
+    const d = document.createElement('div');
+    d.className = 'auction-card' + (bd.rarity === 'mythic' ? ' mythic' : '');
+    d.innerHTML = `<div class="ac-header"><span class="ac-name">${bd.icon||''} ${bd.name||a.bikeId}</span><span class="ac-badge ${bd.rarity||'common'}">${(bd.rarity||'').toUpperCase()}</span></div><div class="ac-price">₹${a.price.toLocaleString('en-IN')}</div><div class="ac-stats"><span class="ac-stat">COND ${a.condition}%</span><span class="ac-stat">· ${bd.cc||'?'}cc</span></div>`;
+    d.onclick = () => { mobClose(); openAuctionDetail(i); };
+    el.appendChild(d);
+  });
+  if (!state.auctions.length) el.innerHTML = '<div style="font-size:.62rem;color:var(--text3);font-family:var(--ff-mono)">No auctions — tap Refresh</div>';
+}
+
+function mobSyncStats() {
+  const clone = (srcId, dstId) => {
+    const src = document.getElementById(srcId), dst = document.getElementById(dstId);
+    if (src && dst) dst.innerHTML = src.innerHTML;
+  };
+  clone('vibe-grid',  'mob-vibe-grid');
+  clone('sales-log',  'mob-sales-log');
+  clone('hall-wrap',  'mob-hall-wrap');
+  // Re-attach vibe click handlers
+  document.querySelectorAll('#mob-vibe-grid .vibe-opt').forEach(el => {
+    const vid = el.dataset.vid;
+    const v = VIBES.find(x => x.id === vid);
+    if (v) el.onclick = () => { setVibe(v); mobSyncStats(); };
+  });
+}
+
+// Swipe down to close
+document.querySelectorAll('.mob-drawer').forEach(drawer => {
+  let sy = 0;
+  drawer.addEventListener('touchstart', e => { sy = e.touches[0].clientY; }, {passive:true});
+  drawer.addEventListener('touchend',   e => { if (e.changedTouches[0].clientY - sy > 55) mobClose(); }, {passive:true});
+});
+
 function bootGame() {
   document.getElementById('start-overlay').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
